@@ -250,6 +250,9 @@ Status SparseUnorderedWithDupsReader<BitmapType>::dowork() {
           result_tiles_created.end());
     }
 
+    logger_->debug(
+        "Done loading tiles, num tiles loaded {0}", result_tiles_loaded.size());
+
     // No more tiles to process, continue.
     if (result_tiles_[0].empty()) {
       continue;
@@ -1103,6 +1106,13 @@ SparseUnorderedWithDupsReader<BitmapType>::compute_fixed_results_to_copy(
     cell_offset += cell_num;
   }
 
+  logger_->debug(
+      "compute_fixed_results_to_copy, {0} {1} {2} {3}",
+      cell_offset,
+      max_num_cells,
+      cell_offsets.size(),
+      result_tiles.size());
+
   // If we filled the buffer, add an extra offset to ease calculations
   // later on. If not, add a partial tile at the end.
   if (cell_offset == max_num_cells ||
@@ -1222,6 +1232,14 @@ SparseUnorderedWithDupsReader<BitmapType>::compute_var_size_offsets(
 
   // Make sure var size buffer can fit the data.
   if (query_buffer.original_buffer_var_size_ < new_var_buffer_size) {
+    std::cout << "Var size buffer cannot fit data, size: "
+              << query_buffer.original_buffer_var_size_
+              << ", required: " << new_var_buffer_size
+              << ", new result tile size: " << new_result_tiles_size
+              << ", cell_offsets[0]: " << cell_offsets[0]
+              << ", new_var_buffer_size[0]: "
+              << ((OffType*)query_buffer.buffer_)[cell_offsets[0]] << std::endl;
+
     // Buffers are full.
     buffers_full = true;
 
@@ -1233,6 +1251,8 @@ SparseUnorderedWithDupsReader<BitmapType>::compute_var_size_offsets(
 
     // Add in a partial tile if the buffer is not full.
     if (query_buffer.original_buffer_var_size_ != new_var_buffer_size) {
+      std::cout << "Adding partial tile" << std::endl;
+
       auto last_tile = (ResultTileWithBitmap<BitmapType>*)
           result_tiles[new_result_tiles_size];
 
@@ -1278,6 +1298,9 @@ Status SparseUnorderedWithDupsReader<BitmapType>::process_tiles(
   std::vector<uint64_t> cell_offsets =
       compute_fixed_results_to_copy(names, result_tiles);
 
+  logger_->debug(
+      "compute_fixed_results_to_copy, buffers_full_ {0}", buffers_full_);
+
   // Making sure we respect the memory budget for the copy operation.
   uint64_t memory_budget = memory_budget_ - memory_used_qc_tiles_total_ -
                            memory_used_for_coords_total_ -
@@ -1286,6 +1309,9 @@ Status SparseUnorderedWithDupsReader<BitmapType>::process_tiles(
   auto&& [st, mem_usage_per_attr] =
       respect_copy_memory_budget(names, memory_budget, result_tiles);
   RETURN_NOT_OK(st);
+
+  logger_->debug(
+      "respect_copy_memory_budget, buffers_full_ {0}", buffers_full_);
 
   // There is no space for any tiles in the user buffer, exit.
   if (result_tiles.empty()) {
@@ -1317,6 +1343,15 @@ Status SparseUnorderedWithDupsReader<BitmapType>::process_tiles(
       const auto nullable = array_schema_->is_nullable(name);
       const auto cell_size = array_schema_->cell_size(name);
       auto& query_buffer = buffers_[name];
+
+      logger_->debug(
+          "Copying {0}, var_size: {1}, nullable: {2}, buffers_full_: {3}, "
+          "result tiles size: {4}",
+          name,
+          var_sized,
+          nullable,
+          buffers_full_,
+          result_tiles.size());
 
       // Get dim idx for zipped coords copy.
       auto dim_idx = 0;
