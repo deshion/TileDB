@@ -133,6 +133,7 @@ set(TILEDB_CORE_SOURCES
   ${TILEDB_CORE_INCLUDE_DIR}/tiledb/sm/array_schema/dimension.cc
   ${TILEDB_CORE_INCLUDE_DIR}/tiledb/sm/array_schema/domain.cc
   ${TILEDB_CORE_INCLUDE_DIR}/tiledb/sm/axis/axis.cc
+  ${TILEDB_CORE_INCLUDE_DIR}/tiledb/sm/axis_query/axis_query.cc
   ${TILEDB_CORE_INCLUDE_DIR}/tiledb/sm/buffer/buffer.cc
   ${TILEDB_CORE_INCLUDE_DIR}/tiledb/sm/buffer/buffer_list.cc
   ${TILEDB_CORE_INCLUDE_DIR}/tiledb/sm/c_api/api_argument_validator.cc
