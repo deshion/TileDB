@@ -44,6 +44,20 @@ target_link_libraries(compile_attribute PRIVATE attribute)
 target_sources(compile_attribute PRIVATE test/compile_attribute_main.cc)
 
 #
+# `label` object library
+#
+add_library(labels OBJECT labels.cc)
+target_link_libraries(labels PUBLIC baseline $<TARGET_OBJECTS:baseline>)
+target_link_libraries(labels PUBLIC vfs $<TARGET_OBJECTS:vfs>)
+#
+# Test-compile of object library ensures link-completeness
+#
+add_executable(compile_labels EXCLUDE_FROM_ALL)
+target_link_libraries(compile_labels PRIVATE labels)
+target_sources(compile_labels PRIVATE test/compile_labels_main.cc)
+
+
+#
 # `dimension` object library
 #
 add_library(dimension OBJECT dimension.cc)
@@ -96,7 +110,13 @@ if (TILEDB_TESTS)
     target_link_libraries(unit_array_schema PUBLIC Catch2::Catch2)
 
     # Sources for tests
-    target_sources(unit_array_schema PUBLIC test/main.cc test/unit_dimension.cc test/unit_domain_data.cc)
+    target_sources(unit_array_schema
+      PUBLIC
+        test/main.cc
+        test/unit_dimension.cc
+        test/unit_domain_data.cc
+        test/unit_array_labels.cc
+    )
 
     add_test(
         NAME "unit_array_schema"
