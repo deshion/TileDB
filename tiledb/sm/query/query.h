@@ -58,8 +58,10 @@ namespace tiledb {
 namespace sm {
 
 class Array;
+class AxisQuery;
 class StorageManager;
 
+enum class LabelOrder : uint8_t;
 enum class QueryStatus : uint8_t;
 enum class QueryType : uint8_t;
 
@@ -170,6 +172,12 @@ class Query {
       uint64_t start_size,
       const void* end,
       uint64_t end_size);
+
+  /** TODO: Add docs. */
+  Status apply_label(const unsigned dim_idx);
+
+  /** TODO: Add docs. */
+  Status apply_labels();
 
   /** Retrieves the number of ranges of the subarray for the given dimension
    * index. */
@@ -606,6 +614,13 @@ class Query {
       uint64_t* const buffer_size,
       const bool check_null_buffers = true);
 
+  /** TODO Add docs */
+  Status set_label_data_buffer(
+      const std::string& name,
+      void* const buffer,
+      uint64_t* const buffer_size,
+      const bool check_null_buffers = true);
+
   /**
    * Sets the offset buffer for a var-sized attribute/dimension.
    *
@@ -648,6 +663,14 @@ class Query {
       uint8_t* const buffer_validity_bytemap,
       uint64_t* const buffer_validity_bytemap_size,
       const bool check_null_buffers = true);
+
+  Status set_external_label(
+      const unsigned dim_idx,
+      const std::string& label_name,
+      const LabelOrder order_type,
+      const std::string& internal_label_name,
+      const std::string& internal_index_name,
+      Array* array);
 
   /**
    * Get the config of the query.
@@ -851,6 +874,9 @@ class Query {
   /** Sets the query subarray, without performing any checks. */
   Status set_subarray_unsafe(const NDRange& subarray);
 
+  /** TODO: Add docs */
+  Status submit_labels();
+
   /** Submits the query to the storage manager. */
   Status submit();
 
@@ -995,6 +1021,11 @@ class Query {
 
   /* Scratch space used for REST requests. */
   shared_ptr<Buffer> rest_scratch_;
+
+  /** NEW HERE */
+  std::vector<shared_ptr<AxisQuery>> label_queries_;
+  std::vector<bool> labels_applied_;
+  std::unordered_map<std::string, AxisQuery*> label_map_;
 
   /* ********************************* */
   /*           PRIVATE METHODS         */
