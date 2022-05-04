@@ -29,10 +29,54 @@
  */
 
 #include <catch.hpp>
+#include "tiledb/sm/enums/datatype.h"
+#include "tiledb/sm/filesystem/uri.h"
 #include "tiledb/sm/label_schema/labels.h"
 
-TEST_CASE(
-    "Dimension label: Test serialization round trip",
-    "[dimension_label][serialize][deserialize]") {
-  REQUIRE(false);  // placeholder
+using namespace tiledb::sm;
+using namespace tiledb::common;
+
+TEST_CASE("Test adding and accessing label schemas", "[array_labels]") {
+  ArrayLabels labels{3};
+  // Add 2 labels to the first dimension and 3 labels to third dimension.
+  // - Label 1
+  auto status = labels.add_external_label(
+      0, "label1", Datatype::UINT64, 1, URI("path1"), true, "dim1", "attr1");
+  CHECK(status.ok());
+  CHECK(labels.label_num(0) == 1);
+  CHECK(labels.label_num(1) == 0);
+  CHECK(labels.label_num(2) == 0);
+  REQUIRE(labels.label_num() == 1);
+  // - Label 2
+  status = labels.add_external_label(
+      2, "label2", Datatype::UINT64, 1, URI("path2"), true, "dim1", "attr1");
+  CHECK(status.ok());
+  CHECK(labels.label_num(0) == 1);
+  CHECK(labels.label_num(1) == 0);
+  CHECK(labels.label_num(2) == 1);
+  REQUIRE(labels.label_num() == 2);
+  // - Label 3
+  status = labels.add_external_label(
+      0, "label3", Datatype::UINT64, 1, URI("path3"), true, "dim1", "attr2");
+  CHECK(status.ok());
+  CHECK(labels.label_num(0) == 2);
+  CHECK(labels.label_num(1) == 0);
+  CHECK(labels.label_num(2) == 0);
+  REQUIRE(labels.label_num() == 1);
+  // - Label 4
+  status = labels.add_external_label(
+      2, "label4", Datatype::UINT64, 1, URI("path4"), true, "dim1", "attr1");
+  CHECK(status.ok());
+  CHECK(labels.label_num(0) == 1);
+  CHECK(labels.label_num(1) == 0);
+  CHECK(labels.label_num(2) == 0);
+  REQUIRE(labels.label_num() == 1);
+  // - Label 5
+  status = labels.add_external_label(
+      2, "label5", Datatype::UINT64, 1, URI("path5"), true, "dim1", "attr1");
+  CHECK(status.ok());
+  CHECK(labels.label_num(0) == 1);
+  CHECK(labels.label_num(1) == 0);
+  CHECK(labels.label_num(2) == 0);
+  REQUIRE(labels.label_num() == 1);
 }
