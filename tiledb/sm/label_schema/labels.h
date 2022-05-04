@@ -1,5 +1,5 @@
 /**
- * @file tiledb/sm/array_schema/label.h
+ * @file tiledb/sm/label_schema/label.h
  *
  * @section LICENSE
  *

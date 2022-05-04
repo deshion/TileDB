@@ -1,5 +1,5 @@
 /**
- * @file tiledb/sm/array_schema/test/compile_label.cc
+ * @file tiledb/sm/label_schema/test/compile_label.cc
  *
  * @section LICENSE
  *
@@ -26,7 +26,7 @@
  * THE SOFTWARE.
  */
 
-#include "tiledb/sm/array_schema/labels.h"
+#include "tiledb/sm/label_schema/labels.h"
 
 int main() {
   (void)sizeof(tiledb::sm::ArrayLabels);

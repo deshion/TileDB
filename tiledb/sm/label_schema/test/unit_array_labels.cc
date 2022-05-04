@@ -1,5 +1,5 @@
 /**
- * @file tiledb/sm/array_schema/test/unit_label.cc
+ * @file tiledb/sm/label_schema/test/unit_label.cc
  *
  * @section LICENSE
  *
@@ -29,7 +29,7 @@
  */
 
 #include <catch.hpp>
-#include "tiledb/sm/array_schema/labels.h"
+#include "tiledb/sm/label_schema/labels.h"
 
 TEST_CASE(
     "Dimension label: Test serialization round trip",

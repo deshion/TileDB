@@ -1,9 +1,10 @@
 #
-# tiledb/sm/CMakeLists.txt
+# tiledb/sm/label_schema/CMakeLists.txt
+#
 #
 # The MIT License
 #
-# Copyright (c) 2021 TileDB, Inc.
+# Copyright (c) 2022 TileDB, Inc.
 #
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to deal
@@ -24,20 +25,21 @@
 # THE SOFTWARE.
 #
 
-include(common-root)
+include(common NO_POLICY_SCOPE)
 
-add_subdirectory(array_schema)
-add_subdirectory(buffer)
-add_subdirectory(compressors)
-add_subdirectory(config)
-add_subdirectory(crypto)
-add_subdirectory(filesystem)
-add_subdirectory(filter)
-add_subdirectory(group)
-add_subdirectory(label_schema)
-add_subdirectory(metadata)
-add_subdirectory(misc)
-add_subdirectory(query)
-add_subdirectory(stats)
-add_subdirectory(subarray)
-add_subdirectory(tile)
+#
+# `label` object library
+#
+add_library(label_schema OBJECT labels.cc)
+target_link_libraries(label_schema PUBLIC baseline $<TARGET_OBJECTS:baseline>)
+target_link_libraries(label_schema PUBLIC vfs $<TARGET_OBJECTS:vfs>)
+#
+# Test-compile of object library ensures link-completeness
+#
+add_executable(compile_label_schema EXCLUDE_FROM_ALL)
+target_link_libraries(compile_label_schema PRIVATE label_schema)
+target_sources(compile_label_schema PRIVATE test/compile_labels_main.cc)
+
+if (TILEDB_TESTS)
+    add_subdirectory(test)
+endif()

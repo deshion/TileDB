@@ -1,5 +1,5 @@
 /**
- * @file tiledb/sm/array_schema/label.cc
+ * @file tiledb/sm/label_schema/labels.cc
  *
  * @section LICENSE
  *
@@ -26,7 +26,7 @@
  * THE SOFTWARE.
  */
 
-#include "tiledb/sm/array_schema/labels.h"
+#include "tiledb/sm/label_schema/labels.h"
 #include "tiledb/common/common.h"
 #include "tiledb/sm/array_schema/domain.h"
 #include "tiledb/sm/enums/datatype.h"
