@@ -53,8 +53,6 @@ class LabelSchema {
  public:
   virtual ~LabelSchema() = default;
 
-  virtual uint32_t dimension_index() const = 0;
-
   virtual uint32_t cell_val_num() const = 0;
 
   virtual const std::string& name() const = 0;
@@ -77,7 +75,6 @@ class ExternalLabelSchema : public LabelSchema {
    * TODO: define parameters
    */
   ExternalLabelSchema(
-      uint32_t dimension_index,
       const std::string& name,
       Datatype type,
       uint32_t cell_val_num,
@@ -85,10 +82,6 @@ class ExternalLabelSchema : public LabelSchema {
       bool relative_uri,
       const std::string& index_name,
       const std::string& label_name);
-
-  inline uint32_t dimension_index() const override {
-    return dimension_index_;
-  }
 
   inline uint32_t cell_val_num() const override {
     return cell_val_num_;
@@ -111,9 +104,6 @@ class ExternalLabelSchema : public LabelSchema {
   }
 
  private:
-  /** Index of the dimension this member is a label for. */
-  uint32_t dimension_index_;
-
   /** Name of the label. */
   std::string name_;
 
@@ -156,8 +146,7 @@ class ArrayLabels {
    *
    * TODO: Add parameters
    */
-  ArrayLabels(
-      const uint32_t dim_num, std::vector<shared_ptr<LabelSchema>> labels);
+  ArrayLabels(std::vector<std::vector<shared_ptr<LabelSchema>>> labels);
 
   Status add_external_label(
       uint32_t dimension_index,
@@ -172,35 +161,39 @@ class ArrayLabels {
   /**
    * Returns the label at the provided index.
    *
-   * @param global_label_index The global index for labels in this array.
-   * @returns Label
-   */
-  shared_ptr<const LabelSchema> array_label_member(
-      const uint32_t global_label_index) const {
-    return labels_[global_label_index];
-  }
-
-  /**
-   * Returns the label at the provided index.
+   * This method looks up the label without performaing any indexing checks.
    *
-   * @param global_label_index The global index for labels in this array.
+   * @param dim_index The index of the dimension the label is defined on
+   * @param label_index The index of the label
    * @returns Label
    */
-  shared_ptr<const LabelSchema> array_label_member(
+  shared_ptr<const LabelSchema> label_schema(
       const uint32_t dim_index, const uint32_t label_index) const {
     return labels_by_dim_index_[dim_index][label_index];
   }
 
   /**
-   * Returns the label at the provided index.
+   * Returns the label with the requested name. Returns a nullptr if the label
+   * wasn't found.
    *
-   * @param global_label_index The global index for labels in this array.
-   * @returns Label
+   * @param label_name Name of the label
+   * @returns Label or nullptr
    */
-  shared_ptr<const LabelSchema> array_label_member(
-      const std::string& label_name) {
-    return labels_by_name_[label_name];
-  }
+  shared_ptr<const LabelSchema> label_schema_by_name(
+      const std::string& label_name) const;
+
+  /**
+   * Returns Dthe label at the provided index.
+   *
+   * This method will verify the label with the name is on the requested
+   * dimension.
+   *
+   * @param dim_index The index of the dimension the label is defined on
+   * @param label_name Name of the label
+   * @returns Label or nullptr
+   */
+  shared_ptr<const LabelSchema> label_schema_by_name(
+      const uint32_t dim_index, const std::string& label_name) const;
 
   /**
    * Get the number of labels.
@@ -209,7 +202,7 @@ class ArrayLabels {
    */
   inline uint64_t label_num() const {
     // Check if this should be uint64_t to be consistent
-    return labels_.size();
+    return labels_by_name_.size();
   }
 
   /**
@@ -224,11 +217,6 @@ class ArrayLabels {
 
  private:
   /**
-   * All labels attached to the array.
-   **/
-  std::vector<shared_ptr<LabelSchema>> labels_;
-
-  /**
    * Map for accesing labels by dimension-based indexing.
    *
    * The component [i, j] is the jth label added to the ith dimension.
@@ -238,7 +226,8 @@ class ArrayLabels {
   /**
    * Map for accessing labels by name.
    */
-  std::unordered_map<std::string, shared_ptr<LabelSchema>> labels_by_name_;
+  std::unordered_map<std::string, tuple<uint32_t, shared_ptr<LabelSchema>>>
+      labels_by_name_;
 };
 
 }  // namespace tiledb::sm

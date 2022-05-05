@@ -41,7 +41,6 @@ namespace tiledb::sm {
 /***********************/
 
 ExternalLabelSchema::ExternalLabelSchema(
-    uint32_t dimension_index,
     const std::string& name,
     Datatype type,
     uint32_t cell_val_num,
@@ -49,8 +48,7 @@ ExternalLabelSchema::ExternalLabelSchema(
     bool relative_uri,
     const std::string& index_name,
     const std::string& label_name)
-    : dimension_index_(dimension_index)
-    , name_(name)
+    : name_(name)
     , type_(type)
     , cell_val_num_(cell_val_num)
     , uri_(uri)
@@ -64,27 +62,26 @@ ExternalLabelSchema::ExternalLabelSchema(
 /***************/
 
 ArrayLabels::ArrayLabels(const uint32_t dim_num)
-    : labels_{}
-    , labels_by_dim_index_{dim_num}
+    : labels_by_dim_index_{dim_num}
     , labels_by_name_{} {
 }
 
 ArrayLabels::ArrayLabels(
-    const uint32_t dim_num, std::vector<shared_ptr<LabelSchema>> labels)
-    : labels_{labels}
-    , labels_by_dim_index_{dim_num}
+    std::vector<std::vector<shared_ptr<LabelSchema>>> labels)
+    : labels_by_dim_index_{labels}
     , labels_by_name_{} {
-  for (auto& label : labels) {
-    const auto index = label->dimension_index();
-    if (index >= dim_num)
-      throw std::invalid_argument(
-          "Cannot have a label to dimension " + std::to_string(index) +
-          " on an array with " + std::to_string(dim_num) + " dimensions.");
-    labels_by_dim_index_[index].emplace_back(label);
-    labels_by_name_.emplace(label->name(), label);
-    if (labels_by_name_.size() != labels_.size())
-      throw std::invalid_argument("Array label names must be unique.");
+  if (labels_by_dim_index_.size() == 0)
+    throw std::invalid_argument(
+        "Cannot add labels to an array with no dimensions.");
+  size_t nlabels{0};
+  for (uint32_t dim_idx{0}; dim_idx < labels_by_dim_index_.size(); ++dim_idx) {
+    nlabels += labels_by_dim_index_[dim_idx].size();
+    for (auto& label : labels_by_dim_index_[dim_idx]) {
+      labels_by_name_.emplace(label->name(), std::tie(dim_idx, label));
+    }
   }
+  if (labels_by_name_.size() != nlabels)
+    throw std::invalid_argument("Array label names must be unique.");
 }
 
 Status ArrayLabels::add_external_label(
@@ -104,19 +101,39 @@ Status ArrayLabels::add_external_label(
   if (labels_by_name_.find(name) != labels_by_name_.end())
     return Status_ArrayLabelsError(
         "Cannot add label " + name + " to array, label already exists.");
-  labels_.emplace_back(make_shared<ExternalLabelSchema>(
-      HERE(),
-      dimension_index,
+  labels_by_dim_index_[dimension_index].emplace_back(
+      make_shared<ExternalLabelSchema>(
+          HERE(),
+          name,
+          type,
+          cell_val_num,
+          uri,
+          relative_uri,
+          index_name,
+          label_name));
+  labels_by_name_.emplace(
       name,
-      type,
-      cell_val_num,
-      uri,
-      relative_uri,
-      index_name,
-      label_name));
-  labels_by_dim_index_[dimension_index].emplace_back(labels_.back());
-  labels_by_name_.emplace(name, labels_.back());
+      std::tie(dimension_index, labels_by_dim_index_[dimension_index].back()));
   return Status::Ok();
+}
+
+shared_ptr<const LabelSchema> ArrayLabels::label_schema_by_name(
+    const std::string& label_name) const {
+  auto it = labels_by_name_.find(label_name);
+  if (it == labels_by_name_.end())
+    return nullptr;
+  return std::get<1>(it->second);
+}
+
+shared_ptr<const LabelSchema> ArrayLabels::label_schema_by_name(
+    const uint32_t dim_index, const std::string& label_name) const {
+  auto it = labels_by_name_.find(label_name);
+  if (it == labels_by_name_.end())
+    return nullptr;
+  auto member = it->second;
+  if (std::get<0>(it->second) != dim_index)
+    return nullptr;
+  return std::get<1>(it->second);
 }
 
 }  // namespace tiledb::sm
