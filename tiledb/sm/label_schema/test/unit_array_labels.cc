@@ -61,22 +61,56 @@ TEST_CASE("Test adding and accessing label schemas", "[array_labels]") {
   CHECK(status.ok());
   CHECK(labels.label_num(0) == 2);
   CHECK(labels.label_num(1) == 0);
-  CHECK(labels.label_num(2) == 0);
-  REQUIRE(labels.label_num() == 1);
+  CHECK(labels.label_num(2) == 1);
+  REQUIRE(labels.label_num() == 3);
   // - Label 4
   status = labels.add_external_label(
       2, "label4", Datatype::UINT64, 1, URI("path4"), true, "dim1", "attr1");
   CHECK(status.ok());
-  CHECK(labels.label_num(0) == 1);
+  CHECK(labels.label_num(0) == 2);
   CHECK(labels.label_num(1) == 0);
-  CHECK(labels.label_num(2) == 0);
-  REQUIRE(labels.label_num() == 1);
+  CHECK(labels.label_num(2) == 2);
+  REQUIRE(labels.label_num() == 4);
   // - Label 5
   status = labels.add_external_label(
       2, "label5", Datatype::UINT64, 1, URI("path5"), true, "dim1", "attr1");
   CHECK(status.ok());
-  CHECK(labels.label_num(0) == 1);
+  CHECK(labels.label_num(0) == 2);
   CHECK(labels.label_num(1) == 0);
-  CHECK(labels.label_num(2) == 0);
-  REQUIRE(labels.label_num() == 1);
+  CHECK(labels.label_num(2) == 3);
+  REQUIRE(labels.label_num() == 5);
+  // Test unable to add label with repeated name.
+  status = labels.add_external_label(
+      2, "label2", Datatype::UINT64, 1, URI("path6"), true, "dim1", "attr1");
+  CHECK(!status.ok());
+  CHECK(labels.label_num(0) == 2);
+  CHECK(labels.label_num(1) == 0);
+  CHECK(labels.label_num(2) == 3);
+  REQUIRE(labels.label_num() == 5);
+  // Test unable to add label with dimension larger than max dim
+  status = labels.add_external_label(
+      3, "label6", Datatype::UINT64, 1, URI("path6"), true, "dim1", "attr1");
+  CHECK(!status.ok());
+  CHECK(labels.label_num(0) == 2);
+  CHECK(labels.label_num(1) == 0);
+  CHECK(labels.label_num(2) == 3);
+  REQUIRE(labels.label_num() == 5);
+  // Test get schema by index
+  auto label_schema4 = labels.label_schema(2, 1);
+  REQUIRE(label_schema4 != nullptr);
+  REQUIRE(label_schema4->name() == std::string("label4"));
+  // Test get schema by name - valid
+  auto label_schema3 = labels.label_schema_by_name("label3");
+  REQUIRE(label_schema3 != nullptr);
+  REQUIRE(label_schema3->name() == std::string("label3"));
+  // Test get schema by name - invalid
+  auto label_schema_none = labels.label_schema_by_name("label6");
+  REQUIRE(label_schema_none == nullptr);
+  // Test get schema by name and dim id - valid
+  auto label_schema1 = labels.label_schema_by_name(0, "label1");
+  REQUIRE(label_schema1 != nullptr);
+  REQUIRE(label_schema1->name() == std::string("label1"));
+  // Test get schema by name and dim id - invalid
+  auto label_schema_none2 = labels.label_schema_by_name(1, "label2");
+  REQUIRE(label_schema_none2 == nullptr);
 }
