@@ -46,22 +46,22 @@ void LabelledQuery::add_external_dimension_label(
           storage_manager_,
           array);
       break;
-    case (LabelOrderType::FORWARD):
-      dimension_label_queries_[dim_idx] = make_shared<ForwardAxisQuery>(
-          HERE(),
-          internal_label_name,
-          internal_index_name,
-          storage_manager_,
-          array);
-      break;
-    case (LabelOrderType::REVERSE):
-      dimension_label_queries_[dim_idx] = make_shared<ReverseAxisQuery>(
-          HERE(),
-          internal_label_name,
-          internal_index_name,
-          storage_manager_,
-          array);
-      break;
+      //    case (LabelOrderType::FORWARD):
+      //      dimension_label_queries_[dim_idx] = make_shared<ForwardAxisQuery>(
+      //          HERE(),
+      //          internal_label_name,
+      //          internal_index_name,
+      //          storage_manager_,
+      //          array);
+      //      break;
+      //    case (LabelOrderType::REVERSE):
+      //      dimension_label_queries_[dim_idx] = make_shared<ReverseAxisQuery>(
+      //          HERE(),
+      //          internal_label_name,
+      //          internal_index_name,
+      //          storage_manager_,
+      //          array);
+      //      break;
     default:
       std::invalid_argument("Cannot add label; invalid label order type.");
   }
