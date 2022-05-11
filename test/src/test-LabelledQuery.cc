@@ -130,7 +130,7 @@ void create_main_array_1d(const std::string& name, tiledb_ctx_t* ctx) {
   tiledb::test::QueryBuffers buffers;
   std::vector<float> a1_data(16);
   for (uint64_t ii{0}; ii < 16; ++ii) {
-    a1_data[ii] = 0.1 * ii;
+    a1_data[ii] = 0.1 * (1 + ii);
   }
   buffers["a1"] = tiledb::test::QueryBuffer(
       {&a1_data[0], a1_data.size() * sizeof(float), nullptr, 0});
@@ -159,8 +159,8 @@ void create_uniform_label(const std::string& name, tiledb_ctx_t* ctx) {
   std::vector<double> label_data(16);
   std::vector<uint64_t> index_data(16);
   for (uint64_t ii{0}; ii < 16; ++ii) {
-    label_data[ii] = ii * 0.5;
-    index_data[ii] = ii;
+    label_data[ii] = (ii + 1) * 0.5;
+    index_data[ii] = (ii + 1);
   }
   buffers["label"] = tiledb::test::QueryBuffer(
       {&label_data[0], label_data.size() * sizeof(double), nullptr, 0});
@@ -179,76 +179,33 @@ TEST_CASE_METHOD(
   create_main_array_1d(main_array_name, ctx);
   create_uniform_label(label_array_name, ctx);
   SECTION("Standard query") {
-    //   // Set array configuration
-    //   tiledb_array_t* array;
-    //   int rc = tiledb_array_alloc(ctx, array_name.c_str(), &array);
-    //   CHECK(rc == TILEDB_OK);
-    //   tiledb_config_t* cfg;
-    //   tiledb_error_t* err = nullptr;
-    //   REQUIRE(tiledb_config_alloc(&cfg, &err) == TILEDB_OK);
-    //   REQUIRE(err == nullptr);
+    // Open the array
+    tiledb_array_t* array;
+    int rc = tiledb_array_alloc(ctx, main_array_name.c_str(), &array);
+    CHECK(rc == TILEDB_OK);
+    rc = tiledb_array_open(ctx, array, TILEDB_READ);
+    CHECK(rc == TILEDB_OK);
 
-    //   rc = tiledb_array_open(ctx, array, TILEDB_READ);
-    //   CHECK(rc == TILEDB_OK);
+    // Create and submit the query
+    uint64_t subarray_vals[2]{4, 7};
+    std::vector<float> a1(4);
+    uint64_t a1_size{a1.size() * sizeof(float)};
+    Query query{ctx->ctx_->storage_manager(), array->array_};
+    query.set_layout(Layout::ROW_MAJOR);
+    query.set_subarray(&subarray_vals[0]);
+    query.set_data_buffer("a1", &a1[0], &a1_size);
+    query.submit();
+    query.finalize();
 
-    //   // Create query
-    //   tiledb_query_t* query;
-    //   rc = tiledb_query_alloc(ctx, array, TILEDB_READ, &query);
-    //   CHECK(rc == TILEDB_OK);
-    //   rc = tiledb_query_set_layout(ctx, query, layout);
-    //   CHECK(rc == TILEDB_OK);
+    // Close and clean-up the array
+    rc = tiledb_array_close(ctx, array);
+    CHECK(rc == TILEDB_OK);
+    tiledb_array_free(&array);
 
-    //   // Set buffers
-
-    //   for (const auto& b : buffers) {
-    //     if (b.second.var_ == nullptr) {  // Fixed-sized
-    //       rc = tiledb_query_set_data_buffer(
-    //           ctx,
-    //           query,
-    //           b.first.c_str(),
-    //           b.second.fixed_,
-    //           (uint64_t*)&(b.second.fixed_size_));
-    //       CHECK(rc == TILEDB_OK);
-    //     } else {  // Var-sized
-    //       rc = tiledb_query_set_data_buffer(
-    //           ctx,
-    //           query,
-    //           b.first.c_str(),
-    //           b.second.var_,
-    //           (uint64_t*)&(b.second.var_size_));
-    //       CHECK(rc == TILEDB_OK);
-    //       rc = tiledb_query_set_offsets_buffer(
-    //           ctx,
-    //           query,
-    //           b.first.c_str(),
-    //           (uint64_t*)b.second.fixed_,
-    //           (uint64_t*)&(b.second.fixed_size_));
-    //       CHECK(rc == TILEDB_OK);
-    //     }
-    //   }
-
-    //   // Submit query
-    //   rc = tiledb_query_submit(ctx, query);
-    //   CHECK(rc == TILEDB_OK);
-
-    //   // Finalize query
-    //   rc = tiledb_query_finalize(ctx, query);
-    //   CHECK(rc == TILEDB_OK);
-
-    //   // Get fragment uri
-    //   const char* temp_uri;
-    //   rc = tiledb_query_get_fragment_uri(ctx, query, 0, &temp_uri);
-    //   REQUIRE(rc == TILEDB_OK);
-    //   *uri = std::string(temp_uri);
-
-    //   // Close array
-    //   rc = tiledb_array_close(ctx, array);
-    //   CHECK(rc == TILEDB_OK);
-
-    //   // Clean up
-    //   tiledb_array_free(&array);
-    //   tiledb_query_free(&query);
-    //   tiledb_config_free(&cfg);
+    // Check results.
+    for (uint64_t ii{0}; ii < 4; ++ii) {
+      CHECK(a1[ii] == static_cast<float>(0.1 * (subarray_vals[0] + ii)));
+    }
   }
   SECTION("Labelled query") {
   }
