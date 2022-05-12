@@ -198,6 +198,7 @@ set(TILEDB_CORE_SOURCES
   ${TILEDB_CORE_INCLUDE_DIR}/tiledb/sm/label_schema/labels.cc
   ${TILEDB_CORE_INCLUDE_DIR}/tiledb/sm/label_query/axis_query.cc
   ${TILEDB_CORE_INCLUDE_DIR}/tiledb/sm/label_query/label_query.cc
+  ${TILEDB_CORE_INCLUDE_DIR}/tiledb/sm/label_query/label_subarray.cc
   ${TILEDB_CORE_INCLUDE_DIR}/tiledb/sm/metadata/metadata.cc
   ${TILEDB_CORE_INCLUDE_DIR}/tiledb/sm/misc/cancelable_tasks.cc
   ${TILEDB_CORE_INCLUDE_DIR}/tiledb/sm/misc/constants.cc
