@@ -10,12 +10,11 @@ namespace tiledb::sm {
 /**********************/
 
 UnorderedAxisQuery::UnorderedAxisQuery(
-    const std::string& label_name,
-    const std::string& index_name,
+    shared_ptr<UnorderedAxisSubarray> subarray,
     StorageManager* storage_manager,
     Array* array)
-    : query_{storage_manager, array}
-    , index_name_{index_name} {
+    : query_{storage_manager, subarray->array}
+    , subarray_{subarray} {
   if (!array->is_open())
     throw std::invalid_argument("Cannot query axis; array is not open.");
   QueryType actual_type;
@@ -23,20 +22,6 @@ UnorderedAxisQuery::UnorderedAxisQuery(
   if (actual_type != QueryType::READ)
     throw std::invalid_argument(
         "Cannot query axis; array is not opened in 'read' mode.");
-  const ArraySchema& array_schema = array->array_schema_latest();
-  if (array_schema.dim_num() != 1)
-    throw std::invalid_argument(
-        "Cannot create unordered axis query; Array must be one "
-        "dimensional.");
-  if (!array_schema.is_dim(label_name))
-    throw std::invalid_argument(
-        "Cannot create unordered axis query; Expected dimension " + label_name +
-        "'.");
-  if (!array_schema.is_attr(index_name))
-    throw std::invalid_argument(
-        "Cannot create unordered axis query; Array is missing index attribute "
-        "'" +
-        index_name + "'.");
 }
 
 }  // namespace tiledb::sm

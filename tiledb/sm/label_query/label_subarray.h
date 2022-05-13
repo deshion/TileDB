@@ -5,6 +5,7 @@
 #include <vector>
 #include "tiledb/common/common.h"
 #include "tiledb/common/logger_public.h"
+#include "tiledb/sm/label_query/axis_subarray.h"
 #include "tiledb/sm/subarray/subarray.h"
 
 using namespace tiledb::common;
@@ -17,30 +18,6 @@ class StorageManager;
 inline Status Status_LabelledSubarrayError(const std::string& msg) {
   return {"[TileDB::LabelledSubarray] Error", msg};
 }
-
-class AxisSubarray {
- public:
-  AxisSubarray(
-      const std::string& label_name,
-      const std::string& internal_label_name,
-      const std::string& internal_index_name,
-      const Array* array,
-      const Layout layout,
-      stats::Stats* stats,
-      shared_ptr<Logger> logger,
-      const bool coalesce_ranges);
-
-  inline tuple<std::string, std::string, std::string> access_signature() {
-    return {label_name_, internal_label_name_, internal_index_name_};
-  }
-
-  Subarray subarray;
-
- private:
-  std::string label_name_;
-  std::string internal_label_name_;
-  std::string internal_index_name_;
-};
 
 class LabelledSubarray {
  public:
@@ -220,7 +197,7 @@ class LabelledSubarray {
   shared_ptr<Logger> logger_;
   bool coalesce_ranges_;
   Subarray subarray_;
-  std::vector<optional<AxisSubarray>> label_subarrays_;
+  std::vector<shared_ptr<AxisSubarray>> label_subarrays_;
 };
 
 }  // namespace tiledb::sm

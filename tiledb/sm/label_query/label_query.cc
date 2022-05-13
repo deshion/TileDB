@@ -21,129 +21,95 @@ LabelledQuery::LabelledQuery(
   if (!array->is_open())
     throw std::invalid_argument("Cannot query array; array is not open.");
   throw_if_not_ok(array->get_query_type(&type_));
+  // TODO Add subarray to constructor. Add construction of label queries.
 }
 
-void LabelledQuery::add_external_dimension_label(
-    const unsigned dim_idx,
-    const LabelOrderType order_type,
-    const std::string& internal_label_name,
-    const std::string& internal_index_name,
-    Array* array) {
-  if (dim_idx > dim_num_)
-    throw std::invalid_argument(
-        "Cannot add label to query; Invalid dimension index.");
-  if (dimension_label_queries_[dim_idx] != nullptr)
-    throw std::invalid_argument(
-        "Cannot add label to query; Dimension label already set for "
-        "dimension " +
-        std::to_string(dim_idx) + ".");
-  switch (order_type) {
-    case (LabelOrderType::UNORDERED):
-      dimension_label_queries_[dim_idx] = make_shared<UnorderedAxisQuery>(
-          HERE(),
-          internal_label_name,
-          internal_index_name,  // TODO: Add index datatype info for checks
-          storage_manager_,
-          array);
-      break;
-      //    case (LabelOrderType::FORWARD):
-      //      dimension_label_queries_[dim_idx] = make_shared<ForwardAxisQuery>(
-      //          HERE(),
-      //          internal_label_name,
-      //          internal_index_name,
-      //          storage_manager_,
-      //          array);
-      //      break;
-      //    case (LabelOrderType::REVERSE):
-      //      dimension_label_queries_[dim_idx] = make_shared<ReverseAxisQuery>(
-      //          HERE(),
-      //          internal_label_name,
-      //          internal_index_name,
-      //          storage_manager_,
-      //          array);
-      //      break;
-    default:
-      std::invalid_argument("Cannot add label; invalid label order type.");
+Status LabelledQuery::cancel() {
+  RETURN_NOT_OK(query_.cancel());
+  for (auto& label_query : dimension_label_queries_) {
+    if (label_query)
+      RETURN_NOT_OK(label_query->cancel());
   }
+  return Status::Ok();
 }
 
-// Status add_range(
-//     unsigned dim_idx, const void* start, const void* end, const void* stride)
-//     {
-// }
-//
-// Status add_range_var(
-//     unsigned dim_idx,
-//     const void* start,
-//     uint64_t start_size,
-//     const void* end,
-//     uint64_t end_size);
-//
-// Status cancel();
-//
-// Status finalize();
-//
+Status finalize() {
+  query.finalize();
+}
+
+Status finalize_labels() {
+  for (auto& label_query : dimension_label_queries_) {
+    RETURN_NOT_OK(label_query->finalize());
+  }
+  return Status::OK();
+}
+
 // Status get_est_result_size(const char* name, uint64_t* size);
-//
+
 // Status get_est_result_size(
 //     const char* name, uint64_t* size_off, uint64_t* size_val);
-//
+
 // Status get_est_result_size_nullable(
 //     const char* name, uint64_t* size_val, uint64_t* size_validity);
-//
+
 // Status get_est_result_size_nullable(
 //     const char* name,
 //     uint64_t* size_off,
 //     uint64_t* size_val,
 //     uint64_t* size_validity);
-//
+
 // Status get_data_buffer(
 //     const char* name, void** buffer, uint64_t** buffer_size) const;
-//
+
 // Status get_offsets_buffer(
 //     const char* name, uint64_t** buffer_off, uint64_t** buffer_off_size)
 //     const;
-//
+
 // Status get_validity_buffer(
 //     const char* name,
 //     uint8_t** buffer_validity_bytemap,
 //     uint64_t** buffer_validity_bytemap_size) const;
-//
+
 // bool has_results() const;
-//
-// Status init();
-//
-// Status set_data_buffer(
-//     const std::string& name,
-//     void* const buffer,
-//     uint64_t* const buffer_size,
-//     const bool check_null_buffers = true);
-//
-// Status set_offsets_buffer(
-//     const std::string& name,
-//     uint64_t* const buffer_offsets,
-//     uint64_t* const buffer_offsets_size,
-//     const bool check_null_buffers = true);
-//
-// Status set_offsets_buffer(
-//     const std::string& name,
-//     uint64_t* const buffer_offsets,
-//     uint64_t* const buffer_offsets_size,
-//     const bool check_null_buffers = true);
-//
-// Status set_validity_buffer(
-//     const std::string& name,
-//     uint8_t* const buffer_validity_bytemap,
-//     uint64_t* const buffer_validity_bytemap_size,
-//     const bool check_null_buffers = true);
-//
-// Status set_layout(Layout layout);
-//
-// Status set_subarray(const void* subarray);
-//
-// Status submit();
-//
-// Status submit_async(std::function<void(void*)> callback, void*
-// callback_data);
+
+Status init() {
+  for (auto& label_query : dimension_label_queries_) {
+    if (label_query.status() != COMPLETED) {
+      return Status_LabelledQueryError(
+          "Unable to initialize query until all label queries are completed.");
+    }
+  }
+  return query.init();
+}
+
+Status set_data_buffer(
+    const std::string& name,
+    void* const buffer,
+    uint64_t* const buffer_size,
+    const bool check_null_buffers = true);
+
+Status set_offsets_buffer(
+    const std::string& name,
+    uint64_t* const buffer_offsets,
+    uint64_t* const buffer_offsets_size,
+    const bool check_null_buffers = true);
+
+Status set_offsets_buffer(
+    const std::string& name,
+    uint64_t* const buffer_offsets,
+    uint64_t* const buffer_offsets_size,
+    const bool check_null_buffers = true);
+
+Status set_validity_buffer(
+    const std::string& name,
+    uint8_t* const buffer_validity_bytemap,
+    uint64_t* const buffer_validity_bytemap_size,
+    const bool check_null_buffers = true);
+
+Status set_labelled_subarray(const LabelledSubarray& subarray);
+
+Status set_subarray(const Subarray& subarray);
+
+Status submit();
 
 }  // namespace tiledb::sm

@@ -34,6 +34,7 @@
 #include "test/src/vfs_helpers.h"
 #include "tiledb/sm/c_api/tiledb_struct_def.h"
 #include "tiledb/sm/label_query/label_query.h"
+#include "tiledb/sm/label_query/label_subarray.h"
 
 #ifdef _WIN32
 #include "tiledb/sm/filesystem/win.h"
@@ -208,5 +209,29 @@ TEST_CASE_METHOD(
     }
   }
   SECTION("Labelled query") {
+    // Open the array
+    tiledb_array_t* main_array;
+    int rc = tiledb_array_alloc(ctx, main_array_name.c_str(), &main_array);
+    CHECK(rc == TILEDB_OK);
+    rc = tiledb_array_open(ctx, main_array, TILEDB_READ);
+    CHECK(rc == TILEDB_OK);
+
+    // Open the label array
+    tiledb_array_t* label_array;
+    rc = tiledb_array_alloc(ctx, label_array_name.c_str(), &label_array);
+    CHECK(rc == TILEDB_OK);
+    rc = tiledb_array_open(ctx, label_array, TILEDB_READ);
+    CHECK(rc == TILEDB_OK);
+
+
+
+    // Close and clean-up the arrayis
+    rc = tiledb_array_close(ctx, array);
+    CHECK(rc == TILEDB_OK);
+    tiledb_array_free(&array);
+    // Close and clean-up the array
+    rc = tiledb_array_close(ctx, label_array);
+    CHECK(rc == TILEDB_OK);
+    tiledb_array_free(&array);
   }
 }
