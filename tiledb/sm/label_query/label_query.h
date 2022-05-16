@@ -5,6 +5,7 @@
 #include <unordered_map>
 #include <vector>
 #include "tiledb/common/common.h"
+#include "tiledb/common/logger_public.h"
 #include "tiledb/sm/filesystem/uri.h"
 #include "tiledb/sm/label_query/axis_query.h"
 #include "tiledb/sm/query/query.h"
@@ -16,10 +17,16 @@ namespace tiledb::sm {
 class Array;
 class StorageManager;
 class Subarrray;
+class LabelledSubarray;
 class Query;
 
 enum class QueryStatus : uint8_t;
 enum class QueryType : uint8_t;
+
+/** Return a Status_LabelledQuery error class Status with a given message **/
+inline Status Status_LabelledQueryError(const std::string& msg) {
+  return {"[TileDB::LabelledQuery] Error", msg};
+}
 
 class LabelledQuery {
  public:
@@ -155,7 +162,7 @@ class LabelledQuery {
   Status init();
 
   /** Initializes the label queries. */
-  Status init_labels();
+  // Status init_labels();
 
   /**
    * Sets the data for a fixed/var-sized attribute/dimension.
@@ -169,11 +176,11 @@ class LabelledQuery {
    * allowed.
    * @return Status
    */
-  Status set_data_buffer(
-      const std::string& name,
-      void* const buffer,
-      uint64_t* const buffer_size,
-      const bool check_null_buffers = true);
+  // Status set_data_buffer(
+  //     const std::string& name,
+  //     void* const buffer,
+  //     uint64_t* const buffer_size,
+  //     const bool check_null_buffers = true);
 
   /**
    * Sets the offset buffer for a var-sized attribute/dimension.
@@ -191,11 +198,11 @@ class LabelledQuery {
    * allowed.
    * @return Status
    */
-  Status set_offsets_buffer(
-      const std::string& name,
-      uint64_t* const buffer_offsets,
-      uint64_t* const buffer_offsets_size,
-      const bool check_null_buffers = true);
+  // Status set_offsets_buffer(
+  //     const std::string& name,
+  //     uint64_t* const buffer_offsets,
+  //     uint64_t* const buffer_offsets_size,
+  //     const bool check_null_buffers = true);
 
   /**
    * Sets the validity buffer for nullable attribute/dimension.
@@ -213,20 +220,20 @@ class LabelledQuery {
    * allowed.
    * @return Status
    */
-  Status set_validity_buffer(
-      const std::string& name,
-      uint8_t* const buffer_validity_bytemap,
-      uint64_t* const buffer_validity_bytemap_size,
-      const bool check_null_buffers = true);
+  //  Status set_validity_buffer(
+  //      const std::string& name,
+  //      uint8_t* const buffer_validity_bytemap,
+  //      uint64_t* const buffer_validity_bytemap_size,
+  //      const bool check_null_buffers = true);
 
   /** Returns the query status. */
-  QueryStatus status() const;
+  // QueryStatus status() const;
 
   /** Submits the label queries to the storage manager. */
-  Status submit_labels();
+  // Status submit_labels();
 
   /** Submits the query to the storage manager. */
-  Status submit();
+  // Status submit();
 
   /**
    * Submits the query to the storage manager. The query will be
@@ -234,15 +241,21 @@ class LabelledQuery {
    * Once the query is completed, the input callback function will
    * be executed using the input callback data.
    */
-  Status submit_async(std::function<void(void*)> callback, void* callback_data);
+  //  Status submit_async(std::function<void(void*)> callback, void*
+  //  callback_data);
 
  private:
-  StorageManager* storage_manager_;
+  /** TODO: Add docs */
+  [[maybe_unused]] StorageManager* storage_manager_;
+
+  /** TODO: Add docs */
   Query query_;
+
+  /** TODO: Add docs */
   unsigned dim_num_;
+
+  /** TODO: unique instead? */
   std::vector<shared_ptr<AxisQuery>> dimension_label_queries_;
-  std::vector<std::vector<AxisQuery>> extra_label_queries_;
-  std::vector<std::vector<AxisQuery>> extra_dim_queries_;
 
   /** The type of the query. */
   QueryType type_;

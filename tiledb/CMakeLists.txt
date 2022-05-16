@@ -197,6 +197,7 @@ set(TILEDB_CORE_SOURCES
   ${TILEDB_CORE_INCLUDE_DIR}/tiledb/sm/group/group_v1.cc
   ${TILEDB_CORE_INCLUDE_DIR}/tiledb/sm/label_schema/labels.cc
   ${TILEDB_CORE_INCLUDE_DIR}/tiledb/sm/label_query/axis_query.cc
+  ${TILEDB_CORE_INCLUDE_DIR}/tiledb/sm/label_query/axis_subarray.cc
   ${TILEDB_CORE_INCLUDE_DIR}/tiledb/sm/label_query/label_query.cc
   ${TILEDB_CORE_INCLUDE_DIR}/tiledb/sm/label_query/label_subarray.cc
   ${TILEDB_CORE_INCLUDE_DIR}/tiledb/sm/metadata/metadata.cc

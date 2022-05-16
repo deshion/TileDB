@@ -35,7 +35,7 @@ LabelledSubarray::LabelledSubarray(
     StorageManager* storage_manager)
     : stats_(
           parent_stats ? parent_stats->create_child("Subarray") :
-          storage_manager ?
+                         storage_manager ?
                          storage_manager->stats()->create_child("subSubarray") :
                          nullptr)
     , logger_(logger->clone("LabelledSubarray", ++logger_id_))
@@ -50,15 +50,14 @@ LabelledSubarray::LabelledSubarray(
 Status LabelledSubarray::add_range(
     unsigned dim_idx, const void* start, const void* end, const void* stride) {
   if (is_labelled(dim_idx))
-    return label_subarrays_[dim_idx]->subarray.add_range(0, start, end, stride);
+    return label_subarrays_[dim_idx]->add_range(0, start, end, stride);
   return subarray_.add_range(dim_idx, start, end, stride);
 }
 
 Status LabelledSubarray::add_point_ranges(
     unsigned dim_idx, const void* start, uint64_t count) {
   if (is_labelled(dim_idx))
-    return label_subarrays_[dim_idx]->subarray.add_point_ranges(
-        0, start, count);
+    return label_subarrays_[dim_idx]->add_point_ranges(0, start, count);
   return subarray_.add_point_ranges(dim_idx, start, count);
 }
 
@@ -69,7 +68,7 @@ Status LabelledSubarray::add_range_var(
     const void* end,
     uint64_t end_size) {
   if (is_labelled(dim_idx))
-    return label_subarrays_[dim_idx]->subarray.add_range_var(
+    return label_subarrays_[dim_idx]->add_range_var(
         0, start, start_size, end, end_size);
   return subarray_.add_range_var(dim_idx, start, start_size, end, end_size);
 }
@@ -77,7 +76,7 @@ Status LabelledSubarray::add_range_var(
 Status LabelledSubarray::get_range_num(
     uint32_t dim_idx, uint64_t* range_num) const {
   if (is_labelled(dim_idx))
-    return label_subarrays_[dim_idx]->subarray.get_range_num(0, range_num);
+    return label_subarrays_[dim_idx]->get_range_num(0, range_num);
   return subarray_.get_range_num(dim_idx, range_num);
 }
 
@@ -88,7 +87,7 @@ Status LabelledSubarray::get_range(
     const void** end,
     const void** stride) const {
   if (is_labelled(dim_idx))
-    return label_subarrays_[dim_idx]->subarray.get_range(
+    return label_subarrays_[dim_idx]->get_range(
         0, range_idx, start, end, stride);
   return subarray_.get_range(dim_idx, range_idx, start, end, stride);
 }
@@ -96,8 +95,7 @@ Status LabelledSubarray::get_range(
 Status LabelledSubarray::get_range_var(
     unsigned dim_idx, uint64_t range_idx, void* start, void* end) const {
   if (is_labelled(dim_idx))
-    return label_subarrays_[dim_idx]->subarray.get_range_var(
-        0, range_idx, start, end);
+    return label_subarrays_[dim_idx]->get_range_var(0, range_idx, start, end);
   return subarray_.get_range_var(dim_idx, range_idx, start, end);
 }
 
@@ -107,7 +105,7 @@ Status LabelledSubarray::get_range_var_size(
     uint64_t* start_size,
     uint64_t* end_size) const {
   if (is_labelled(dim_idx))
-    return label_subarrays_[dim_idx]->subarray.get_range_var_size(
+    return label_subarrays_[dim_idx]->get_range_var_size(
         0, range_idx, start_size, end_size);
   return subarray_.get_range_var_size(dim_idx, range_idx, start_size, end_size);
 }
@@ -122,75 +120,62 @@ Status LabelledSubarray::set_external_label(
   if (is_labelled(dim_idx))
     return Status_LabelledSubarrayError(
         "Cannot set label on dimension " + std::to_string(dim_idx) +
+        "; A dimension label is already set on this dimension.");
+  if (subarray_.is_set(dim_idx))
+    return Status_LabelledSubarrayError(
+        "Cannot set label on dimension " + std::to_string(dim_idx) +
+        "; The dimension already has ranges added to it.");
+  label_subarrays_[dim_idx] = AxisSubarray(
+      label_name,
+      order_type,
+      internal_label_name,
+      internal_index_name,
+      array,
+      subarray_.layout(),
+      stats_,
+      logger_,
+      coalesce_ranges_);
+  return Status::Ok();
+}
+
+Status LabelledSubarray::set_label(
+    const unsigned dim_idx, const unsigned label_idx) {
+  if (is_labelled(dim_idx))
+    return Status_LabelledSubarrayError(
+        "Cannot set label on dimension " + std::to_string(dim_idx) +
         "; Dimension label is already set.");
   if (subarray_.is_set(dim_idx))
     return Status_LabelledSubarrayError(
         "Cannot set label on dimension " + std::to_string(dim_idx) +
         "; The dimension already has ranges set.");
-  switch (order_type) {
-    case (LabelOrderType::UNORDERED):
-      label_subarrays_[dim_idx] = make_shared<UnorderedAxisSubarray>(
-          label_name,
-          internal_label_name,
-          internal_index_name,
-          array,
-          subarray_.layout(),
-          stats_,
-          logger_,
-          coalesce_ranges_);
-      return Status::Ok();
-    case (LabelOrderType::REVERSE):
-      return Status_LabelledSubarrayError(
-          "Cannot set label; support for reverse ordered labels is not yet "
-          "implemented.");
-    case (LabelOrderType::FORWARD):
-      return Status_LabelledSubarrayError(
-          "Cannot set label; support for ordered labels is not yet "
-          "implemented.");
-    default:
-      return Status_LabelledSubarrayError(
-          "Cannot set label; invalid label type.");
-  }
+  return Status_LabelledSubarrayError(
+      "Cannot set label " + std::to_string(label_idx) + " on dimension " +
+      std::to_string(dim_idx) +
+      ". Support for internal labels is not yet implemented.");
+}
 
-  Status LabelledSubarray::set_label(
-      const unsigned dim_idx, const unsigned label_idx) {
-    if (is_labelled(dim_idx))
-      return Status_LabelledSubarrayError(
-          "Cannot set label on dimension " + std::to_string(dim_idx) +
-          "; Dimension label is already set.");
-    if (subarray_.is_set(dim_idx))
-      return Status_LabelledSubarrayError(
-          "Cannot set label on dimension " + std::to_string(dim_idx) +
-          "; The dimension already has ranges set.");
-    return Status_LabelledSubarrayError(
-        "Cannot set label " + std::to_string(label_idx) + " on dimension " +
-        std::to_string(dim_idx) +
-        ". Support for internal labels is not yet implemented.");
-  }
-
-  Status LabelledSubarray::set_config(const Config& config) {
-    RETURN_NOT_OK(subarray_.set_config(config));
-    for (auto& label_subarray : label_subarrays_) {
-      if (label_subarray.has_value()) {
-        RETURN_NOT_OK(label_subarray->subarray.set_config(config));
-      }
+Status LabelledSubarray::set_config(const Config& config) {
+  RETURN_NOT_OK(subarray_.set_config(config));
+  for (auto& label_subarray : label_subarrays_) {
+    if (label_subarray.has_value()) {
+      RETURN_NOT_OK(label_subarray->set_config(config));
     }
-    return Status::Ok();
   }
+  return Status::Ok();
+}
 
-  const Config* LabelledSubarray::config() const {
-    return subarray_.config();
-  }
+const Config* LabelledSubarray::config() const {
+  return subarray_.config();
+}
 
-  Status LabelledSubarray::set_coalesce_ranges(bool coalesce_ranges) {
-    RETURN_NOT_OK(subarray_.set_coalesce_ranges(coalesce_ranges));
-    for (auto& label_subarray : label_subarrays_) {
-      if (label_subarray.has_value()) {
-        RETURN_NOT_OK(
-            label_subarray->subarray.set_coalesce_ranges(coalesce_ranges));
-      }
+Status LabelledSubarray::set_coalesce_ranges(bool coalesce_ranges) {
+  RETURN_NOT_OK(subarray_.set_coalesce_ranges(coalesce_ranges));
+  for (auto& label_subarray : label_subarrays_) {
+    if (label_subarray.has_value()) {
+      RETURN_NOT_OK(label_subarray->set_coalesce_ranges(coalesce_ranges));
     }
-    return Status::Ok();
   }
+  return Status::Ok();
+}
 
 }  // namespace tiledb::sm

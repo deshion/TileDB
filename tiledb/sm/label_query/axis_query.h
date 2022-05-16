@@ -25,6 +25,7 @@ class AxisQuery {
    */
   virtual Status cancel() = 0;
 
+  virtual Status finalize() = 0;
   //  /**
   //   * Gets the estimated result size (in bytes) for the input fixed-sized
   //   * attribute/dimension.
@@ -88,33 +89,29 @@ class AxisQuery {
    *
    * @param name The buffer attribute/dimension name. An empty string means
    * the special default attribute/dimension.
-   * @param buffer_validity_bytemap The buffer that either have the
-   validity
+   * @param buffer_validity_bytemap The buffer that either have the validity
    * bytemap associated with the input data to be written, or will hold the
    * validity bytemap to be read.
-   * @param buffer_validity_bytemap_size In the case of writes, this is the
-   size
-   * of `buffer_validity_bytemap` in bytes. In the case of reads, this
-   initially
-   * contains the allocated size of `buffer_validity_bytemap`, but after
-   the
+   * @param buffer_validity_bytemap_size In the case of writes, this is the size
+   * of `buffer_validity_bytemap` in bytes. In the case of reads, this initially
+   * contains the allocated size of `buffer_validity_bytemap`, but after the
    * termination of the query it will contain the size of the useful (read)
    * data in `buffer_validity_bytemap`.
    * @return Status
    */
-  virtual Status get_validity_buffer(
-      const char* name,
-      uint8_t** buffer_validity_bytemap,
-      uint64_t** buffer_validity_bytemap_size) const = 0;
+  //   virtual Status get_validity_buffer(
+  //       const char* name,
+  //       uint8_t** buffer_validity_bytemap,
+  //       uint64_t** buffer_validity_bytemap_size) const = 0;
 
   /**
    * Returns `true` if the query has results. Applicable only to read
    * queries (it returns `false` for write queries).
    */
-  virtual bool has_results() const = 0;
+  // virtual bool has_results() const = 0;
 
   /** Initializes the query. */
-  virtual Status init() const = 0;
+  virtual Status init() = 0;
 
   /**
    * Sets the data for a fixed/var-sized attribute/dimension.
@@ -177,21 +174,29 @@ class AxisQuery {
       uint8_t* const buffer_validity_bytemap,
       uint64_t* const buffer_validity_bytemap_size,
       const bool check_null_buffers = true) = 0;
+
+  /** Returns the query status. */
+  virtual QueryStatus status() const = 0;
+
+  /** Submits the query to the storage manager. */
+  virtual Status submit() = 0;
 };
 
 class UnorderedAxisQuery : public AxisQuery {
  public:
   UnorderedAxisQuery() = delete;
   UnorderedAxisQuery(
-      const std::string& label_name,
-      const std::string& index_name,
-      StorageManager* storage_manager,
-      Array* array);
+      const AxisSubarray& subarray, StorageManager* storage_manager);
+  /** Disable copy and move. */
+  DISABLE_COPY_AND_COPY_ASSIGN(UnorderedAxisQuery);
+  DISABLE_MOVE_AND_MOVE_ASSIGN(UnorderedAxisQuery);
 
-  Status cancel();
+  Status cancel() override;
+
+  Status finalize() override;
 
   /** Initializes the query. */
-  Status init();
+  Status init() override;
 
   /**
    * Sets the data for a fixed/var-sized attribute/dimension.
@@ -209,7 +214,7 @@ class UnorderedAxisQuery : public AxisQuery {
       const std::string& name,
       void* const buffer,
       uint64_t* const buffer_size,
-      const bool check_null_buffers = true);
+      const bool check_null_buffers = true) override;
 
   /**
    * Sets the offset buffer for a var-sized attribute/dimension.
@@ -230,7 +235,7 @@ class UnorderedAxisQuery : public AxisQuery {
       const std::string& name,
       uint64_t* const buffer_offsets,
       uint64_t* const buffer_offsets_size,
-      const bool check_null_buffers = true);
+      const bool check_null_buffers = true) override;
 
   /**
    * Sets the validity buffer for nullable attribute/dimension.
@@ -252,28 +257,17 @@ class UnorderedAxisQuery : public AxisQuery {
       const std::string& name,
       uint8_t* const buffer_validity_bytemap,
       uint64_t* const buffer_validity_bytemap_size,
-      const bool check_null_buffers = true);
-
-  /**
-   * Sets the query subarray.
-   *
-   * @param subarray The subarray to be set.
-   * @return Status
-   */
-  Status set_subarray(const Subarray& subarray);
+      const bool check_null_buffers = true) override;
 
   /** Returns the query status. */
-  QueryStatus status() const;
-
-  /** Submits the label queries to the storage manager. */
-  Status submit_labels();
+  QueryStatus status() const override;
 
   /** Submits the query to the storage manager. */
-  Status submit();
+  Status submit() override;
 
  private:
   Query query_;
-  std::string index_name_;
+  AxisSubarray subarray_;  // TODO Change this. Maybe pointer?
 };
 
 }  // namespace tiledb::sm

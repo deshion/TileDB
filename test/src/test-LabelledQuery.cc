@@ -223,15 +223,13 @@ TEST_CASE_METHOD(
     rc = tiledb_array_open(ctx, label_array, TILEDB_READ);
     CHECK(rc == TILEDB_OK);
 
-
-
     // Close and clean-up the arrayis
-    rc = tiledb_array_close(ctx, array);
+    rc = tiledb_array_close(ctx, main_array);
     CHECK(rc == TILEDB_OK);
-    tiledb_array_free(&array);
+    tiledb_array_free(&main_array);
     // Close and clean-up the array
     rc = tiledb_array_close(ctx, label_array);
     CHECK(rc == TILEDB_OK);
-    tiledb_array_free(&array);
+    tiledb_array_free(&label_array);
   }
 }
