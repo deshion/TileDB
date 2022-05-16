@@ -4,6 +4,7 @@
 #include "tiledb/sm/enums/query_type.h"
 #include "tiledb/sm/label_query/axis_query.h"
 #include "tiledb/sm/label_query/label_subarray.h"
+#include "tiledb/sm/misc/constants.h"
 #include "tiledb/sm/query/query.h"
 #include "tiledb/sm/subarray/subarray.h"
 
@@ -23,7 +24,6 @@ LabelledQuery::LabelledQuery(
   if (!array->is_open())
     throw std::invalid_argument("Cannot query array; array is not open.");
   throw_if_not_ok(array->get_query_type(&type_));
-  // TODO Add subarray to constructor. Add construction of label queries.
   for (unsigned dim_idx{0}; dim_idx < dim_num_; ++dim_idx) {
     auto axis_subarray = subarray.label_subarray(dim_idx);
     if (axis_subarray.has_value()) {
@@ -46,6 +46,8 @@ LabelledQuery::LabelledQuery(
         default:
           throw std::invalid_argument("Invalid label order type.");
       }
+      label_map_[axis_subarray->label_name()] =
+          dimension_label_queries_[dim_idx].get();
     }
   }
 }
@@ -109,29 +111,70 @@ Status LabelledQuery::init() {
   return query_.init();
 }
 
-//   Status set_data_buffer(
-//       const std::string& name,
-//       void* const buffer,
-//       uint64_t* const buffer_size,
-//       const bool check_null_buffers = true);
+Status LabelledQuery::init_labels() {
+  for (auto& label_query : dimension_label_queries_) {
+    if (label_query)
+      RETURN_NOT_OK(label_query->init());
+  }
+  return Status::Ok();
+}
+
+bool LabelledQuery::label_queries_completed() {
+  for (auto& label_query : dimension_label_queries_) {
+    if (label_query && label_query->status() != QueryStatus::COMPLETED)
+      return false;
+  }
+  return true;
+}
+
+Status LabelledQuery::set_data_buffer(
+    const std::string& name,
+    void* const buffer,
+    uint64_t* const buffer_size,
+    const bool check_null_buffers) {
+  if (name == constants::coords)
+    return Status_LabelledQueryError(
+        "Cannot set zipped coordinates on a labelled query.");
+  auto label_query = label_map_.find(name);
+  // If a label query with the requested name was not found, then add the buffer
+  // to the main query. Otherwise, add the buffer to the label query.
+  return (label_query == label_map_.end()) ?
+             query_.set_data_buffer(
+                 name, buffer, buffer_size, check_null_buffers) :
+             label_query->second->set_index_data_buffer(
+                 buffer, buffer_size, check_null_buffers);
+}
+
+Status LabelledQuery::set_label_data_buffer(
+    const std::string& name,
+    void* const buffer,
+    uint64_t* const buffer_size,
+    const bool check_null_buffers) {
+  auto label_query = label_map_.find(name);
+  if (label_query == label_map_.end())
+    return Status_LabelledQueryError("No label with name '" + name + "'.");
+  // Name is a dimension associated with a label. Add to label query.
+  return label_query->second->set_label_data_buffer(
+      buffer, buffer_size, check_null_buffers);
+}
 
 // Status set_offsets_buffer(
 //     const std::string& name,
 //     uint64_t* const buffer_offsets,
 //     uint64_t* const buffer_offsets_size,
-//     const bool check_null_buffers = true);
+//     const bool check_null_buffers);
 
 // Status set_offsets_buffer(
 //     const std::string& name,
 //     uint64_t* const buffer_offsets,
 //     uint64_t* const buffer_offsets_size,
-//     const bool check_null_buffers = true);
+//     const bool check_null_buffers);
 
 // Status set_validity_buffer(
 //     const std::string& name,
 //     uint8_t* const buffer_validity_bytemap,
 //     uint64_t* const buffer_validity_bytemap_size,
-//     const bool check_null_buffers = true);
+//     const bool check_null_buffers);
 
 // Status set_labelled_subarray(const LabelledSubarray& subarray);
 

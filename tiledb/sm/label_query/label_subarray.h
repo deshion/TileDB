@@ -200,6 +200,9 @@ class LabelledSubarray {
    */
   Status set_coalesce_ranges(bool coalesce_ranges = true);
 
+  /** Sets the subarray layout. */
+  void set_layout(Layout layout);
+
  private:
   stats::Stats* stats_;
   inline static std::atomic<uint64_t> logger_id_ = 0;

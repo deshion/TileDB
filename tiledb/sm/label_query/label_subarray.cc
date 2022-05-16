@@ -169,6 +169,7 @@ const Config* LabelledSubarray::config() const {
 }
 
 Status LabelledSubarray::set_coalesce_ranges(bool coalesce_ranges) {
+  // TODO: Fix so if failed, action is undone.
   RETURN_NOT_OK(subarray_.set_coalesce_ranges(coalesce_ranges));
   for (auto& label_subarray : label_subarrays_) {
     if (label_subarray.has_value()) {
@@ -176,6 +177,14 @@ Status LabelledSubarray::set_coalesce_ranges(bool coalesce_ranges) {
     }
   }
   return Status::Ok();
+}
+
+void LabelledSubarray::set_layout(Layout layout) {
+  subarray_.set_layout(layout);
+  for (auto& label_subarray : label_subarrays_) {
+    if (label_subarray.has_value())
+      label_subarray->set_layout(layout);
+  }
 }
 
 }  // namespace tiledb::sm

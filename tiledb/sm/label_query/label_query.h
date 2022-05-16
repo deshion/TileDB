@@ -162,7 +162,10 @@ class LabelledQuery {
   Status init();
 
   /** Initializes the label queries. */
-  // Status init_labels();
+  Status init_labels();
+
+  /** TODO Add docs. */
+  bool label_queries_completed();
 
   /**
    * Sets the data for a fixed/var-sized attribute/dimension.
@@ -176,11 +179,29 @@ class LabelledQuery {
    * allowed.
    * @return Status
    */
-  // Status set_data_buffer(
-  //     const std::string& name,
-  //     void* const buffer,
-  //     uint64_t* const buffer_size,
-  //     const bool check_null_buffers = true);
+  Status set_data_buffer(
+      const std::string& name,
+      void* const buffer,
+      uint64_t* const buffer_size,
+      const bool check_null_buffers = true);
+
+  /**
+   * Sets the data for a fixed/var-sized dimension label.
+   *
+   * @param name The attribute/dimension to set the buffer for.
+   * @param buffer The buffer that will hold the data to be read.
+   * @param buffer_size This initially contains the allocated
+   *     size of `buffer`, but after the termination of the function
+   *     it will contain the size of the useful (read) data in `buffer`.
+   * @param check_null_buffers If true (default), null buffers are not
+   * allowed.
+   * @return Status
+   */
+  Status set_label_data_buffer(
+      const std::string& name,
+      void* const buffer,
+      uint64_t* const buffer_size,
+      const bool check_null_buffers = true);
 
   /**
    * Sets the offset buffer for a var-sized attribute/dimension.
@@ -227,7 +248,7 @@ class LabelledQuery {
   //      const bool check_null_buffers = true);
 
   /** Returns the query status. */
-  // QueryStatus status() const;
+  QueryStatus status() const;
 
   /** Submits the label queries to the storage manager. */
   // Status submit_labels();
@@ -254,8 +275,11 @@ class LabelledQuery {
   /** TODO: Add docs */
   unsigned dim_num_;
 
-  /** TODO: unique instead? */
+  /** TODO: Add docs */
   std::vector<shared_ptr<AxisQuery>> dimension_label_queries_;
+
+  /** Labels by name. */
+  std::unordered_map<std::string, AxisQuery*> label_map_;
 
   /** The type of the query. */
   QueryType type_;

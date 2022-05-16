@@ -36,33 +36,20 @@ Status UnorderedAxisQuery::init() {
   return query_.init();
 }
 
-Status UnorderedAxisQuery::set_data_buffer(
-    const std::string& name,
+Status UnorderedAxisQuery::set_index_data_buffer(
     void* const buffer,
     uint64_t* const buffer_size,
     const bool check_null_buffers) {
-  return query_.set_data_buffer(name, buffer, buffer_size, check_null_buffers);
+  return query_.set_data_buffer(
+      subarray_.internal_index_name(), buffer, buffer_size, check_null_buffers);
 }
 
-Status UnorderedAxisQuery::set_offsets_buffer(
-    const std::string& name,
-    uint64_t* const buffer_offsets,
-    uint64_t* const buffer_offsets_size,
+Status UnorderedAxisQuery::set_label_data_buffer(
+    void* const buffer,
+    uint64_t* const buffer_size,
     const bool check_null_buffers) {
-  return query_.set_offsets_buffer(
-      name, buffer_offsets, buffer_offsets_size, check_null_buffers);
-}
-
-Status UnorderedAxisQuery::set_validity_buffer(
-    const std::string& name,
-    uint8_t* const buffer_validity_bytemap,
-    uint64_t* const buffer_validity_bytemap_size,
-    const bool check_null_buffers) {
-  return query_.set_validity_buffer(
-      name,
-      buffer_validity_bytemap,
-      buffer_validity_bytemap_size,
-      check_null_buffers);
+  return query_.set_data_buffer(
+      subarray_.internal_label_name(), buffer, buffer_size, check_null_buffers);
 }
 
 /** Returns the query status. */

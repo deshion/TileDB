@@ -25,10 +25,6 @@ AxisSubarray::AxisSubarray(
     , order_type_(order_type)
     , internal_label_name_(internal_label_name)
     , internal_index_name_(internal_index_name) {
-  if (order_type == LabelOrderType::UNORDERED && layout != Layout::UNORDERED)
-    throw std::invalid_argument(
-        "Cannot create axis subarray; Support for unordered layouts on "
-        "unordered subarrays are not yet implemented.");
   const ArraySchema& array_schema = array->array_schema_latest();
   if (array_schema.dim_num() != 1)
     throw std::invalid_argument(

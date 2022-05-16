@@ -30,10 +30,6 @@ class AxisSubarray {
       shared_ptr<Logger> logger,
       const bool coalesce_ranges);
 
-  inline tuple<std::string, std::string, std::string> access_signature() {
-    return {label_name_, internal_label_name_, internal_index_name_};
-  }
-
   inline Status add_range(
       unsigned dim_idx,
       const void* start,
@@ -87,6 +83,18 @@ class AxisSubarray {
         dim_idx, range_idx, start_size, end_size);
   }
 
+  inline const std::string& internal_index_name() {
+    return internal_index_name_;
+  }
+
+  inline const std::string& internal_label_name() {
+    return internal_label_name_;
+  }
+
+  inline const std::string& label_name() {
+    return label_name_;
+  }
+
   inline LabelOrderType label_order_type() const {
     return order_type_;
   }
@@ -101,6 +109,10 @@ class AxisSubarray {
 
   inline Status set_config(const Config& config) {
     return subarray_.set_config(config);
+  }
+
+  inline void set_layout(Layout layout) {
+    return subarray_.set_layout(layout);
   }
 
  private:
