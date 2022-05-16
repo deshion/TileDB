@@ -35,6 +35,8 @@
 #include "tiledb/sm/c_api/tiledb_struct_def.h"
 #include "tiledb/sm/label_query/label_query.h"
 #include "tiledb/sm/label_query/label_subarray.h"
+#include "tiledb/sm/query/query.h"
+#include "tiledb/sm/subarray/subarray.h"
 
 #ifdef _WIN32
 #include "tiledb/sm/filesystem/win.h"
@@ -112,7 +114,7 @@ struct TemporaryDirectoryFixture {
  */
 void create_main_array_1d(const std::string& name, tiledb_ctx_t* ctx) {
   uint64_t domain[2]{1, 16};
-  uint64_t tile_extent{4};
+  uint64_t tile_extent{16};
   create_array(
       ctx,
       name,
@@ -139,14 +141,14 @@ void create_main_array_1d(const std::string& name, tiledb_ctx_t* ctx) {
 }
 
 void create_uniform_label(const std::string& name, tiledb_ctx_t* ctx) {
-  double domain[2]{-100.0, 100.0};
-  double tile_extent{10.0};
+  int64_t domain[2]{-16, -1};
+  int64_t tile_extent{16};
   create_array(
       ctx,
       name,
       TILEDB_SPARSE,
       {"label"},
-      {TILEDB_FLOAT64},
+      {TILEDB_INT64},
       {domain},
       {&tile_extent},
       {"index"},
@@ -157,14 +159,14 @@ void create_uniform_label(const std::string& name, tiledb_ctx_t* ctx) {
       TILEDB_ROW_MAJOR,
       10000);
   tiledb::test::QueryBuffers buffers;
-  std::vector<double> label_data(16);
+  std::vector<int64_t> label_data(16);
   std::vector<uint64_t> index_data(16);
-  for (uint64_t ii{0}; ii < 16; ++ii) {
-    label_data[ii] = (ii + 1) * 0.5;
+  for (uint32_t ii{0}; ii < 16; ++ii) {
+    label_data[ii] = static_cast<int64_t>(ii) - 16;
     index_data[ii] = (ii + 1);
   }
   buffers["label"] = tiledb::test::QueryBuffer(
-      {&label_data[0], label_data.size() * sizeof(double), nullptr, 0});
+      {&label_data[0], label_data.size() * sizeof(int64_t), nullptr, 0});
   buffers["index"] = tiledb::test::QueryBuffer(
       {&index_data[0], index_data.size() * sizeof(uint64_t), nullptr, 0});
   write_array(ctx, name, TILEDB_GLOBAL_ORDER, buffers);
@@ -196,7 +198,8 @@ TEST_CASE_METHOD(
     query.set_subarray(&subarray_vals[0]);
     query.set_data_buffer("a1", &a1[0], &a1_size);
     query.submit();
-    query.finalize();
+
+    CHECK(query.status() == QueryStatus::COMPLETED);
 
     // Close and clean-up the array
     rc = tiledb_array_close(ctx, array);
@@ -206,6 +209,51 @@ TEST_CASE_METHOD(
     // Check results.
     for (uint64_t ii{0}; ii < 4; ++ii) {
       CHECK(a1[ii] == static_cast<float>(0.1 * (subarray_vals[0] + ii)));
+    }
+  }
+  SECTION("Direct query on label") {
+    // Open the label array
+    tiledb_array_t* label_array;
+    auto rc = tiledb_array_alloc(ctx, label_array_name.c_str(), &label_array);
+    CHECK(rc == TILEDB_OK);
+    rc = tiledb_array_open(ctx, label_array, TILEDB_READ);
+    CHECK(rc == TILEDB_OK);
+
+    // Create subarray.
+    Subarray subarray{label_array->array_,
+                      nullptr,
+                      ctx->ctx_->storage_manager()->logger(),
+                      true,
+                      ctx->ctx_->storage_manager()};
+    std::vector<int64_t> range{-8, -5};
+    subarray.add_range(0, &range[0], &range[1], nullptr);
+
+    // Create query.
+    Query query{ctx->ctx_->storage_manager(), label_array->array_};
+    query.set_subarray(subarray);
+    std::vector<int64_t> label(4);
+    uint64_t label_size{label.size() * sizeof(int64_t)};
+    query.set_data_buffer("label", &label[0], &label_size);
+    std::vector<uint64_t> index(4);
+    uint64_t index_size{index.size() * sizeof(uint64_t)};
+    query.set_data_buffer("index", &index[0], &index_size);
+    query.submit();
+
+    CHECK(query.status() == QueryStatus::COMPLETED);
+
+    // Close and clean-up the array
+    rc = tiledb_array_close(ctx, label_array);
+    CHECK(rc == TILEDB_OK);
+    tiledb_array_free(&label_array);
+
+    // Check results
+    std::vector<int64_t> expected_label{-8, -7, -6, -5};
+    std::vector<uint64_t> expected_index{9, 10, 11, 12};
+
+    for (size_t ii{0}; ii < 4; ++ii) {
+      INFO("Label " << std::to_string(ii));
+      CHECK(label[ii] == expected_label[ii]);
+      CHECK(index[ii] == expected_index[ii]);
     }
   }
   SECTION("Labelled query") {
@@ -222,6 +270,30 @@ TEST_CASE_METHOD(
     CHECK(rc == TILEDB_OK);
     rc = tiledb_array_open(ctx, label_array, TILEDB_READ);
     CHECK(rc == TILEDB_OK);
+
+    // Create subarray.
+    LabelledSubarray subarray{main_array->array_,
+                              nullptr,
+                              ctx->ctx_->storage_manager()->logger(),
+                              true,
+                              ctx->ctx_->storage_manager()};
+    subarray.set_external_label(
+        0,
+        "label0",
+        LabelOrderType::UNORDERED,
+        "label",
+        "index",
+        label_array->array_);
+    int64_t start{-8};
+    int64_t end{-4};
+    int64_t stride{1};
+    subarray.add_range(0, &start, &end, &stride);
+
+    // Create query.
+    LabelledQuery query{
+        subarray, ctx->ctx_->storage_manager(), main_array->array_};
+    std::vector<int64_t> label(4);
+    std::vector<uint64_t> index(4);
 
     // Close and clean-up the arrayis
     rc = tiledb_array_close(ctx, main_array);
