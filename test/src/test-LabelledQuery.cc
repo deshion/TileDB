@@ -221,6 +221,7 @@ TEST_CASE_METHOD(
 
     // Create subarray.
     Subarray subarray{label_array->array_,
+                      Layout::ROW_MAJOR,
                       nullptr,
                       ctx->ctx_->storage_manager()->logger(),
                       true,
@@ -284,16 +285,24 @@ TEST_CASE_METHOD(
         "label",
         "index",
         label_array->array_);
-    int64_t start{-8};
-    int64_t end{-4};
-    int64_t stride{1};
-    subarray.add_range(0, &start, &end, &stride);
+    std::vector<int64_t> range{-8, -5};
+    subarray.add_label_range(0, &range[0], &range[1], nullptr);
 
     // Create query.
     LabelledQuery query{
         subarray, ctx->ctx_->storage_manager(), main_array->array_};
     std::vector<int64_t> label(4);
+    uint64_t label_size{label.size() * sizeof(int64_t)};
     std::vector<uint64_t> index(4);
+    uint64_t index_size{index.size() * sizeof(uint64_t)};
+    query.set_data_buffer("dim0", &index[0], &index_size);
+    query.set_label_data_buffer("label0", &label[0], &label_size);
+
+    // Submit label query and check for success.
+    // query.submit_labels();
+    //
+
+    // Submit main query and check for success.
 
     // Close and clean-up the arrayis
     rc = tiledb_array_close(ctx, main_array);

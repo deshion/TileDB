@@ -83,15 +83,15 @@ class AxisSubarray {
         dim_idx, range_idx, start_size, end_size);
   }
 
-  inline const std::string& internal_index_name() {
+  inline const std::string& internal_index_name() const {
     return internal_index_name_;
   }
 
-  inline const std::string& internal_label_name() {
+  inline const std::string& internal_label_name() const {
     return internal_label_name_;
   }
 
-  inline const std::string& label_name() {
+  inline const std::string& label_name() const {
     return label_name_;
   }
 

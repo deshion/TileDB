@@ -62,6 +62,18 @@ class LabelledSubarray {
       StorageManager* storage_manager = nullptr);
 
   /**
+   * Set point ranges from an array
+   *
+   * @param dim_idx Dimension index
+   * @param start Pointer to start of the array
+   * @param count Number of elements to add
+   * @return Status
+   * TODO: Split into separate functions for label, label index, and range
+   */
+  Status add_label_point_ranges(
+      unsigned dim_idx, const void* start, uint64_t count);
+
+  /**
    * Adds a range to the subarray on the input dimension by index,
    * in the form of (start, end, stride).
    * The range components must be of the same type as the domain type of the
@@ -70,10 +82,22 @@ class LabelledSubarray {
    * This is called directly by the C-API.
    *
    * TODO: add params to docs.
+   * TODO: Split into separate functions for label, label index, and range
    */
-  Status add_range(
+  Status add_label_range(
       unsigned dim_idx, const void* start, const void* end, const void* stride);
 
+  /**
+   * Adds a variable-sized range to the (read/write) query on the input
+   * dimension by index, in the form of (start, end).
+   * TODO: Split into separate functions for label, label index, and range
+   */
+  Status add_label_range_var(
+      unsigned dim_idx,
+      const void* start,
+      uint64_t start_size,
+      const void* end,
+      uint64_t end_size);
   /**
    * Set point ranges from an array
    *
@@ -81,12 +105,28 @@ class LabelledSubarray {
    * @param start Pointer to start of the array
    * @param count Number of elements to add
    * @return Status
+   * TODO: Split into separate functions for label, label index, and range
    */
   Status add_point_ranges(unsigned dim_idx, const void* start, uint64_t count);
 
   /**
+   * Adds a range to the subarray on the input dimension by index,
+   * in the form of (start, end, stride).
+   * The range components must be of the same type as the domain type of the
+   * underlying array.
+   *
+   * This is called directly by the C-API.
+   *
+   * TODO: add params to docs.
+   * TODO: Split into separate functions for label, label index, and range
+   */
+  Status add_range(
+      unsigned dim_idx, const void* start, const void* end, const void* stride);
+
+  /**
    * Adds a variable-sized range to the (read/write) query on the input
    * dimension by index, in the form of (start, end).
+   * TODO: Split into separate functions for label, label index, and range
    */
   Status add_range_var(
       unsigned dim_idx,
@@ -202,6 +242,10 @@ class LabelledSubarray {
 
   /** Sets the subarray layout. */
   void set_layout(Layout layout);
+
+  inline const Subarray& subarray() const {
+    return subarray_;
+  }
 
  private:
   stats::Stats* stats_;

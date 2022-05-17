@@ -47,18 +47,34 @@ LabelledSubarray::LabelledSubarray(
         "Subarray(): missing parent_stats requires live storage_manager!");
 }
 
-Status LabelledSubarray::add_range(
+Status LabelledSubarray::add_label_point_ranges(
+    unsigned dim_idx, const void* start, uint64_t count) {
+  return label_subarrays_[dim_idx]->add_point_ranges(0, start, count);
+}
+
+Status LabelledSubarray::add_label_range(
     unsigned dim_idx, const void* start, const void* end, const void* stride) {
-  if (is_labelled(dim_idx))
-    return label_subarrays_[dim_idx]->add_range(0, start, end, stride);
-  return subarray_.add_range(dim_idx, start, end, stride);
+  return label_subarrays_[dim_idx]->add_range(0, start, end, stride);
+}
+
+Status LabelledSubarray::add_label_range_var(
+    unsigned dim_idx,
+    const void* start,
+    uint64_t start_size,
+    const void* end,
+    uint64_t end_size) {
+  return label_subarrays_[dim_idx]->add_range_var(
+      0, start, start_size, end, end_size);
 }
 
 Status LabelledSubarray::add_point_ranges(
     unsigned dim_idx, const void* start, uint64_t count) {
-  if (is_labelled(dim_idx))
-    return label_subarrays_[dim_idx]->add_point_ranges(0, start, count);
   return subarray_.add_point_ranges(dim_idx, start, count);
+}
+
+Status LabelledSubarray::add_range(
+    unsigned dim_idx, const void* start, const void* end, const void* stride) {
+  return subarray_.add_range(dim_idx, start, end, stride);
 }
 
 Status LabelledSubarray::add_range_var(

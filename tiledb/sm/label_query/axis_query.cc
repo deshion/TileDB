@@ -1,5 +1,6 @@
 #include "tiledb/sm/label_query/axis_query.h"
 #include "tiledb/sm/array/array.h"
+#include "tiledb/sm/enums/datatype.h"
 #include "tiledb/sm/label_query/axis_subarray.h"
 #include "tiledb/sm/query/query.h"
 #include "tiledb/sm/storage_manager/storage_manager.h"
@@ -30,6 +31,18 @@ Status UnorderedAxisQuery::cancel() {
 
 Status UnorderedAxisQuery::finalize() {
   return query_.finalize();
+}
+
+tuple<Status, void*, uint64_t> UnorderedAxisQuery::get_index_point_ranges()
+    const {
+  void* start;
+  uint64_t* size;
+  auto status = query_.get_data_buffer(
+      subarray_.internal_index_name().c_str(), &start, &size);
+  Datatype index_type =
+      query_.array_schema().type(subarray_.internal_index_name());
+  uint64_t count = *size / datatype_size(index_type);
+  return {status, start, count};
 }
 
 Status UnorderedAxisQuery::init() {

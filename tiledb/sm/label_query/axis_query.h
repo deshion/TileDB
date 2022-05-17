@@ -27,17 +27,16 @@ class AxisQuery {
 
   virtual Status finalize() = 0;
 
-  // /**
-  //  * Retrieves the data buffer of a fixed/var-sized attribute/dimension.
-  //  *
-  //  * @param name The buffer attribute/dimension name. An empty string means
-  //  *     the special default attribute/dimension.
-  //  * @param buffer The buffer to be retrieved.
-  //  * @param buffer_size A pointer to the buffer size to be retrieved.
-  //  * @return Status
-  //  */
-  // virtual Status get_data_buffer(
-  //     const char* name, void** buffer, uint64_t** buffer_size) const = 0;
+  /**
+   * Retrieves the data buffer of a fixed/var-sized attribute/dimension.
+   *
+   * @param name The buffer attribute/dimension name. An empty string means
+   *     the special default attribute/dimension.
+   * @param buffer The buffer to be retrieved.
+   * @param buffer_size A pointer to the buffer size to be retrieved.
+   * @return Status
+   */
+  virtual tuple<Status, void*, uint64_t> get_index_point_ranges() const = 0;
 
   /**
    * Returns `true` if the query has results. Applicable only to read
@@ -97,6 +96,8 @@ class UnorderedAxisQuery : public AxisQuery {
   Status cancel() override;
 
   Status finalize() override;
+
+  tuple<Status, void*, uint64_t> get_index_point_ranges() const override;
 
   Status init() override;
 

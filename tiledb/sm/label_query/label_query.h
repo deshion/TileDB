@@ -8,6 +8,7 @@
 #include "tiledb/common/logger_public.h"
 #include "tiledb/sm/filesystem/uri.h"
 #include "tiledb/sm/label_query/axis_query.h"
+#include "tiledb/sm/label_query/label_subarray.h"
 #include "tiledb/sm/query/query.h"
 
 using namespace tiledb::common;
@@ -50,6 +51,10 @@ class LabelledQuery {
   /** Disable copy and move. */
   DISABLE_COPY_AND_COPY_ASSIGN(LabelledQuery);
   DISABLE_MOVE_AND_MOVE_ASSIGN(LabelledQuery);
+
+  Status apply_label(unsigned dim_idx);
+
+  Status apply_labels();
 
   /**
    * Marks a query that has not yet been started as failed. This should not be
@@ -158,14 +163,11 @@ class LabelledQuery {
    */
   // bool has_results() const;
 
-  /** Initializes the query. */
-  Status init();
-
-  /** Initializes the label queries. */
-  Status init_labels();
-
-  /** TODO Add docs. */
-  bool label_queries_completed();
+  /**
+   * Returns true if all label queries completed and ranges set to main
+   * subarray and false otherwise
+   **/
+  bool labels_applied() const;
 
   /**
    * Sets the data for a fixed/var-sized attribute/dimension.
@@ -251,10 +253,13 @@ class LabelledQuery {
   QueryStatus status() const;
 
   /** Submits the label queries to the storage manager. */
-  // Status submit_labels();
+  Status submit_labels();
+
+  /** Submits the label queries to the storage manager. */
+  Status submit_labels(const unsigned dim_idx);
 
   /** Submits the query to the storage manager. */
-  // Status submit();
+  Status submit();
 
   /**
    * Submits the query to the storage manager. The query will be
@@ -272,11 +277,21 @@ class LabelledQuery {
   /** TODO: Add docs */
   Query query_;
 
+  LabelledSubarray subarray_;
+
   /** TODO: Add docs */
   unsigned dim_num_;
 
   /** TODO: Add docs */
-  std::vector<shared_ptr<AxisQuery>> dimension_label_queries_;
+  std::vector<shared_ptr<AxisQuery>> label_queries_;
+
+  /**
+   * Boolean that stores if the data from the dimension label has been read and
+   * successfully set to the appropriate dimension.
+   *
+   * If the dimension does not have a label, it is marked as true.
+   **/
+  std::vector<bool> labels_applied_;
 
   /** Labels by name. */
   std::unordered_map<std::string, AxisQuery*> label_map_;
