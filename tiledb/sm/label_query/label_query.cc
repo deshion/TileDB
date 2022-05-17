@@ -73,7 +73,9 @@ Status LabelledQuery::apply_label(const unsigned dim_idx) {
   auto&& [status, start, count] = label_query->get_index_point_ranges();
   if (!status.ok())  // Figure out how to log status immediately
     return status;
-  return subarray_.add_point_ranges(dim_idx, start, count);
+  RETURN_NOT_OK(subarray_.add_point_ranges(dim_idx, start, count));
+  labels_applied_[dim_idx] = true;
+  return Status::Ok();
 }
 
 Status LabelledQuery::apply_labels() {
@@ -214,7 +216,7 @@ Status LabelledQuery::submit() {
         "Unable to submit query until all label queries are "
         "completed.");
   RETURN_NOT_OK(query_.set_subarray(subarray_.subarray()));
-  return query_.init();
+  return query_.submit();
 }
 
 }  // namespace tiledb::sm

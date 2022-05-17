@@ -295,14 +295,24 @@ TEST_CASE_METHOD(
     uint64_t label_size{label.size() * sizeof(int64_t)};
     std::vector<uint64_t> index(4);
     uint64_t index_size{index.size() * sizeof(uint64_t)};
+    std::vector<float> a1(4);
+    uint64_t a1_size{a1.size() * sizeof(float)};
     query.set_data_buffer("dim0", &index[0], &index_size);
     query.set_label_data_buffer("label0", &label[0], &label_size);
+    query.set_data_buffer("a1", &a1[0], &a1_size);
 
     // Submit label query and check for success.
-    // query.submit_labels();
-    //
+    auto status = query.submit_labels();
+    CHECK(status.ok());
+    status = query.apply_labels();
+    CHECK(status.ok());
+    REQUIRE(query.labels_applied());
 
     // Submit main query and check for success.
+    status = query.submit();
+    CHECK(status.ok());
+    INFO(query_status_str(query.status()));
+    CHECK(query.status() == QueryStatus::COMPLETED);
 
     // Close and clean-up the arrayis
     rc = tiledb_array_close(ctx, main_array);
@@ -312,5 +322,17 @@ TEST_CASE_METHOD(
     rc = tiledb_array_close(ctx, label_array);
     CHECK(rc == TILEDB_OK);
     tiledb_array_free(&label_array);
+
+    // Check results
+    std::vector<int64_t> expected_label{-8, -7, -6, -5};
+    std::vector<uint64_t> expected_index{9, 10, 11, 12};
+    std::vector<float> expected_a1{0.9, 1.0, 1.1, 1.2};
+
+    for (size_t ii{0}; ii < 4; ++ii) {
+      INFO("Label " << std::to_string(ii));
+      CHECK(label[ii] == expected_label[ii]);
+      CHECK(index[ii] == expected_index[ii]);
+      CHECK(a1[ii] == expected_a1[ii]);
+    }
   }
 }

@@ -250,7 +250,9 @@ class LabelledQuery {
   //      const bool check_null_buffers = true);
 
   /** Returns the query status. */
-  QueryStatus status() const;
+  inline QueryStatus status() const {
+    return query_.status();
+  }
 
   /** Submits the label queries to the storage manager. */
   Status submit_labels();
