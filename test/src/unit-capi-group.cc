@@ -31,9 +31,9 @@
  */
 
 #include "catch.hpp"
-#include "test/src/helpers.h"
-#include "test/src/serialization_wrappers.h"
-#include "test/src/vfs_helpers.h"
+#include "test/support/helpers.h"
+#include "test/support/serialization_wrappers.h"
+#include "test/support/vfs_helpers.h"
 #ifdef _WIN32
 #include "tiledb/sm/filesystem/path_win.h"
 #include "tiledb/sm/filesystem/win.h"
@@ -41,7 +41,7 @@
 #include "tiledb/sm/filesystem/posix.h"
 #endif
 
-#include "serialization_wrappers.h"
+//#include "serialization_wrappers.h"
 #include "tiledb/sm/c_api/tiledb.h"
 #include "tiledb/sm/enums/encryption_type.h"
 #include "tiledb/sm/global_state/unit_test_config.h"

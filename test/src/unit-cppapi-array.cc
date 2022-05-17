@@ -31,7 +31,7 @@
  */
 
 #include "catch.hpp"
-#include "helpers.h"
+#include "test/support/helpers.h"
 #include "tiledb/sm/cpp_api/tiledb"
 #include "tiledb/sm/filesystem/uri.h"
 #include "tiledb/sm/misc/constants.h"

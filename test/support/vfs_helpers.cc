@@ -31,8 +31,8 @@
  */
 #include "catch.hpp"
 
-#include "test/src/helpers.h"
-#include "test/src/vfs_helpers.h"
+#include "test/support/helpers.h"
+#include "test/support/vfs_helpers.h"
 
 namespace tiledb {
 namespace test {

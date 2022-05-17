@@ -30,8 +30,8 @@
  * Tests the `ArrayDirectory` class.
  */
 
-#include "test/src/helpers.h"
-#include "test/src/vfs_helpers.h"
+#include "test/support/helpers.h"
+#include "test/support/vfs_helpers.h"
 #include "tiledb/sm/array/array_directory.h"
 #include "tiledb/sm/c_api/tiledb_struct_def.h"
 

@@ -32,7 +32,7 @@
 #include "tiledb/sm/c_api/tiledb.h"
 #include "tiledb/sm/c_api/tiledb_struct_def.h"
 
-#include "test/src/helpers.h"
+#include "test/support/helpers.h"
 #include "tiledb/sm/query/result_coords.h"
 #include "tiledb/sm/query/sparse_index_reader_base.h"
 

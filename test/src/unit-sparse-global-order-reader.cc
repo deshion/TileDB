@@ -30,7 +30,7 @@
  * Tests for the sparse global order reader.
  */
 
-#include "test/src/helpers.h"
+#include "test/support/helpers.h"
 #include "tiledb/sm/c_api/tiledb.h"
 #include "tiledb/sm/c_api/tiledb_struct_def.h"
 #include "tiledb/sm/query/sparse_global_order_reader.h"
