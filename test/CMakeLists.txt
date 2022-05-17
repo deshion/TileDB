@@ -105,7 +105,6 @@ set(TILEDB_TEST_SUPPORT_SOURCES
 
 set(TILEDB_UNIT_TEST_SOURCES
   src/helpers.h
-  src/helpers.cc
   src/helpers-dimension.h
   src/serialization_wrappers.cc
   src/unit-azure.cc
