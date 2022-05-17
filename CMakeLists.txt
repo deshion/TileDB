@@ -280,6 +280,7 @@ add_subdirectory(examples)
 
 # Build unit tests
 if (TILEDB_TESTS)
+  add_subdirectory(test/support)
   add_subdirectory(test)
 
   # Add cmake target for "tests" to build all unit tests executables
