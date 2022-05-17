@@ -31,7 +31,7 @@
  */
 
 #include "catch.hpp"
-#include "test/support/helpers.h"
+#include "test/support/src/helpers.h"
 #include "tiledb/sm/c_api/tiledb.h"
 
 #include <cstring>

@@ -30,8 +30,8 @@
  * Tests the C API for array metadata.
  */
 
-#include "test/support/helpers.h"
-#include "test/support/vfs_helpers.h"
+#include "test/support/src/helpers.h"
+#include "test/support/src/vfs_helpers.h"
 #include "tiledb/sm/c_api/tiledb.h"
 #include "tiledb/sm/c_api/tiledb_struct_def.h"
 #include "tiledb/sm/enums/encryption_type.h"

@@ -97,16 +97,16 @@ list(APPEND TILEDB_CORE_INCLUDE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/../tiledb/sm/c_
 
 # Gather the test source files
 set(TILEDB_TEST_SUPPORT_SOURCES
-  support/helpers.h
-  support/helpers.cc
-  support/helpers-dimension.h
-  support/serialization_wrappers.cc
-  support/vfs_helpers.cc
+  support/src/helpers.h
+  support/src/helpers.cc
+  support/src/helpers-dimension.h
+  support/src/serialization_wrappers.cc
+  support/src/vfs_helpers.cc
   )
 
 set(TILEDB_UNIT_TEST_SOURCES
-  support/helpers.h
-  support/helpers-dimension.h
+  support/src/helpers.h
+  support/src/helpers-dimension.h
   src/unit-azure.cc
   src/unit-backwards_compat.cc
   src/unit-bufferlist.cc

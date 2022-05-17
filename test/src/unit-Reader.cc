@@ -30,8 +30,8 @@
  * Tests the `Reader` class.
  */
 
-#include "test/support/helpers.h"
-#include "test/support/vfs_helpers.h"
+#include "test/support/src/helpers.h"
+#include "test/support/src/vfs_helpers.h"
 #include "tiledb/common/common.h"
 #include "tiledb/common/dynamic_memory/dynamic_memory.h"
 #include "tiledb/common/heap_memory.h"

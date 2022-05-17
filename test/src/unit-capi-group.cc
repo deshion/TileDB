@@ -31,9 +31,9 @@
  */
 
 #include "catch.hpp"
-#include "test/support/helpers.h"
-#include "test/support/serialization_wrappers.h"
-#include "test/support/vfs_helpers.h"
+#include "test/support/src/helpers.h"
+#include "test/support/src/serialization_wrappers.h"
+#include "test/support/src/vfs_helpers.h"
 #ifdef _WIN32
 #include "tiledb/sm/filesystem/path_win.h"
 #include "tiledb/sm/filesystem/win.h"
