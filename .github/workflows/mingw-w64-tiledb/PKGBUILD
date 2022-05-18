@@ -12,10 +12,13 @@ depends=("${MINGW_PACKAGE_PREFIX}-lz4"
          "${MINGW_PACKAGE_PREFIX}-bzip2"
          "${MINGW_PACKAGE_PREFIX}-zlib"
          "${MINGW_PACKAGE_PREFIX}-zstd"
+         "${MINGW_PACKAGE_PREFIX}-file"
+         "${MINGW_PACKAGE_PREFIX}-dlfcn"
          )
 makedepends=("${MINGW_PACKAGE_PREFIX}-cmake"
              "${MINGW_PACKAGE_PREFIX}-gcc"
-             "${MINGW_PACKAGE_PREFIX}-curl")
+             "${MINGW_PACKAGE_PREFIX}-curl"
+             )
 options=("staticlibs" "strip")
 source_dir="$TILEDB_HOME"
 
@@ -29,11 +32,13 @@ build() {
   fi
 
   export MSYS2_ARG_CONV_EXCL="-DCMAKE_INSTALL_PREFIX="
+#    -DCMAKE_BUILD_TYPE=Release 
+
   ${MINGW_PREFIX}/bin/cmake.exe \
     -G"MSYS Makefiles" \
     -DCMAKE_INSTALL_PREFIX=${MINGW_PREFIX} \
     -DBUILD_SHARED_LIBS=OFF \
-    -DCMAKE_BUILD_TYPE=Release \
+    -DCMAKE_BUILD_TYPE=RelWithDebInfo \
     -DTILEDB_STATIC=ON \
     -DTILEDB_S3=ON \
     -DCOMPILER_SUPPORTS_AVX2=OFF \
@@ -41,6 +46,9 @@ build() {
     ..
   make
   make -C tiledb
+  
+  # examples build currently fails due to deprecation warnings treated as errors
+  # make -DTILEDB_ examples
 }
 
 package() {
@@ -50,5 +58,79 @@ package() {
 
 check (){
   cd ${source_dir}/build-${MINGW_CHOST}
-  #make check
+  # may want to add
+  #  -DTILEDB_VERBOSE=ON \
+  # to cmake options above if enabling/running 'make check'.
+  # install(/run) minio if invoking 'check' later since building with TILEDB_S3=ON
+#  export MAGIC=${MINGW_PREFIX}/share/misc/magic.mgc
+  #export TILEDB_VFS_S3_CONNECT_TIMEOUT_MS=10000 #6000
+  export TILEDB_VFS_S3_REQUEST_TIMEOUT_MS=10000 #6000
+  #export TILEDB_VFS_S3_REQUEST_TIMEOUT=10000 #6000
+  #export TILEDB_VFS_S3_S3_REQUEST_TIMEOUT=10000 #6000
+  #export MINIO_ACCESS_KEY=minio
+  #export MINIO_SECRET_KEY=miniosecretkey
+  #export AWS_ACCESS_KEY_ID=minio
+  #export AWS_SECRET_ACCESS_KEY=miniosecretkey
+  
+  export TILEDB_VFS_S3_AWS_ACCESS_KEY_ID=minio
+  export TILEDB_VFS_S3_AWS_SECRET_ACCESS_KEY=miniosecretkey
+  export TILEDB_VFS_S3_SCHEME=http
+
+  # echo "inside check(), before trying to start minio"
+  # powershell ${TILEDB_HOME}/scripts/install-minio.ps1
+  # some poweshell versions...
+  # ... start-process in script fails apparently due to pre-existing tmp/TMP/TEMP env vars
+  ( unset tmp; unset TMP; unset TEMP; powershell ${TILEDB_HOME}/scripts/install-minio.ps1 )
+  # sleep 10
+  # echo "inside check(), before calling 'make check'"
+
+  make -C tiledb/test tiledb_unit -j ${NUMBER_OF_PROCESSORS}
+  # make check
+  ./tiledb/test/tiledb_unit.exe -d=yes "C API: Test dense array\, encrypted"
+  ./tiledb/test/tiledb_unit.exe -d=yes "C API: Test dense array\, sorted reads"
+  ./tiledb/test/tiledb_unit.exe -d=yes
+  
+  
+
+  echo "done with 'make check'"
+
+#  echo 'running any examples/c_api/* found'
+#  for exampleexe in $(ls ./tiledb/examples/c_api/*_c) ; do echo $exampleexe; $exampleexe; done
+#  echo 'running any examples/cpp_api/* found'
+#  for exampleexe in $(ls ./tiledb/examples/cpp_api/*_cpp) ; do echo $exampleexe; $exampleexe; done
+
+  echo 'running any examples/c_api/* found'
+  BaseDir="$(pwd)"
+  TestAppDir="$(pwd)/tiledb/examples/c_api"
+  TestAppDataDir="$(pwd)/tiledb/examples/c_api/test_app_data"
+  for exampleexe in $(ls ${TestAppDir}/*_c) ; 
+  do 
+    cd ${TestAppDir}
+    rm -rf ${TestAppDataDir}
+    mkdir ${TestAppDataDir}
+    cd ${TestAppDataDir}
+    echo $exampleexe; $exampleexe; 
+  done
+  cd ${TestAppDir}
+  rm -rf ${TestAppDataDir}
+
+  echo 'running any examples/cpp_api/* found'
+  cd ${BaseDir}
+  TestAppDir="$(pwd)/tiledb/examples/cpp_api"
+  TestAppDataDir="$(pwd)/tiledb/examples/cpp_api/test_app_data"
+  for exampleexe in $(ls ${TestAppDir}/*_cpp) ; 
+  do 
+    cd ${TestAppDir}
+    rm -rf ${TestAppDataDir}
+    mkdir ${TestAppDataDir}
+    cd ${TestAppDataDir}
+    echo $exampleexe; $exampleexe; 
+  done
+  cd ${TestAppDir}
+  rm -rf ${TestAppDataDir}
+  cd ${BaseDir}
+
+  
+  echo "done running examples"
+  
 }

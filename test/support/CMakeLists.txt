@@ -71,7 +71,7 @@ target_include_directories(
 if (TILEDB_HDFS)
   target_compile_definitions(tiledb_test_support_lib PRIVATE -DHAVE_HDFS)
   target_include_directories(tiledb_test_support_lib PRIVATE
-    "${CMAKE_CURRENT_SOURCE_DIR}/../external/include"
+    "${CMAKE_SOURCE_DIR}/external/include"
     )
 endif()
 
@@ -99,7 +99,7 @@ endif()
 target_compile_definitions(tiledb_test_support_lib PRIVATE -DTILEDB_CORE_OBJECTS_EXPORTS)
 
 target_compile_definitions(tiledb_test_support_lib PRIVATE
-  -DTILEDB_TEST_INPUTS_DIR="${CMAKE_CURRENT_SOURCE_DIR}/inputs"
+  -DTILEDB_TEST_INPUTS_DIR="${CMAKE_CURRENT_SOURCE_DIR}/../inputs"
 )
 
 target_link_libraries(tiledb_test_support_lib
