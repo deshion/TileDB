@@ -200,6 +200,11 @@ set(TILEDB_UNIT_TEST_SOURCES
   src/unit-win-filesystem.cc
   )
 
+if (TILEDB_EXPERIMENTAL_FEATURES)
+  list(APPEND TILEDB_UNIT_TEST_SOURCES
+    src/test-capi-dimension_labels.cc)
+endif()
+
 if (TILEDB_CPP_API)
   list(APPEND TILEDB_UNIT_TEST_SOURCES
     src/unit-cppapi-array.cc

@@ -526,6 +526,15 @@ const std::string hilbert_str = "hilbert";
 /** The string representation of null. */
 const std::string null_str = "null";
 
+/** The string representation of unordered label. */
+const std::string label_unordered_str = "unordered";
+
+/** The string representation of forward order label. */
+const std::string label_forward_str = "forward";
+
+/** The string representation of reverse order label. */
+const std::string label_reverse_str = "reverse";
+
 /** The string representation for object type invalid. */
 const std::string object_type_invalid_str = "INVALID";
 

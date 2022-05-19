@@ -36,13 +36,16 @@
 #include "tiledb/common/heap_memory.h"
 #include "tiledb/common/logger.h"
 #include "tiledb/sm/array_schema/attribute.h"
+#include "tiledb/sm/array_schema/axis_schema.h"
 #include "tiledb/sm/array_schema/dimension.h"
+#include "tiledb/sm/array_schema/dimension_label.h"
 #include "tiledb/sm/array_schema/domain.h"
 #include "tiledb/sm/buffer/buffer.h"
 #include "tiledb/sm/enums/array_type.h"
 #include "tiledb/sm/enums/compressor.h"
 #include "tiledb/sm/enums/datatype.h"
 #include "tiledb/sm/enums/filter_type.h"
+#include "tiledb/sm/enums/label_order.h"
 #include "tiledb/sm/enums/layout.h"
 #include "tiledb/sm/filter/compression_filter.h"
 #include "tiledb/sm/misc/hilbert.h"
@@ -105,6 +108,9 @@ ArraySchema::ArraySchema(
     Layout tile_order,
     uint64_t capacity,
     std::vector<shared_ptr<const Attribute>> attributes,
+    std::vector<
+        tuple<shared_ptr<const DimensionLabel>, shared_ptr<const AxisSchema>>>
+        dimension_labels,
     FilterPipeline cell_var_offsets_filters,
     FilterPipeline cell_validity_filters,
     FilterPipeline coords_filters)
@@ -117,6 +123,7 @@ ArraySchema::ArraySchema(
     , tile_order_(tile_order)
     , capacity_(capacity)
     , attributes_(attributes)
+    , dimension_labels_(dimension_labels)
     , cell_var_offsets_filters_(cell_var_offsets_filters)
     , cell_validity_filters_(cell_validity_filters)
     , coords_filters_(coords_filters) {
@@ -142,6 +149,12 @@ ArraySchema::ArraySchema(
     attribute_map_[attr->name()] = attr;
   }
 
+  // Create dimension label map
+  for (auto& label : dimension_labels_) {
+    dimension_label_map_[std::get<0>(label)->name()] = {
+        std::get<0>(label).get(), std::get<1>(label).get()};
+  }
+
   st = check_double_delta_compressor(coords_filters_);
   if (!st.ok())
     throw StatusException(
@@ -153,10 +166,9 @@ ArraySchema::ArraySchema(
     throw StatusException(Status_ArraySchemaError(
         "Array schema check failed; RLE compression used."));
 
-  if (!check_attribute_dimension_names())
-    throw StatusException(
-        Status_ArraySchemaError("Array schema check failed; Attributes "
-                                "and dimensions must have unique names"));
+  st = check_attribute_dimension_label_names();
+  if (!st.ok())
+    throw StatusException(st);
 }
 
 ArraySchema::ArraySchema(const ArraySchema& array_schema) {
@@ -320,11 +332,7 @@ Status ArraySchema::check() const {
 
   RETURN_NOT_OK(check_double_delta_compressor(coords_filters()));
   RETURN_NOT_OK(check_string_compressor(coords_filters()));
-
-  if (!check_attribute_dimension_names())
-    return LOG_STATUS(
-        Status_ArraySchemaError("Array schema check failed; Attributes "
-                                "and dimensions must have unique names"));
+  RETURN_NOT_OK(check_attribute_dimension_label_names());
 
   // Success
   return Status::Ok();
@@ -396,6 +404,10 @@ std::vector<Datatype> ArraySchema::dim_types() const {
   return ret;
 }
 
+ArraySchema::dimension_label_size_type ArraySchema::dim_label_num() const {
+  return static_cast<dimension_label_size_type>(dimension_labels_.size());
+}
+
 ArraySchema::dimension_size_type ArraySchema::dim_num() const {
   return domain_->dim_num();
 }
@@ -455,6 +467,11 @@ bool ArraySchema::is_dim(const std::string& name) const {
   return this->dimension_ptr(name) != nullptr;
 }
 
+bool ArraySchema::is_dim_label(const std::string& name) const {
+  auto it = dimension_label_map_.find(name);
+  return it != dimension_label_map_.end();
+}
+
 bool ArraySchema::is_field(const std::string& name) const {
   return is_attr(name) || is_dim(name) || name == constants::coords ||
          name == constants::timestamps;
@@ -481,6 +498,10 @@ bool ArraySchema::is_nullable(const std::string& name) const {
 // attribute_num (uint32_t)
 //   attribute #1
 //   attribute #2
+//   ...
+// dimension_label_num (uint32_t)
+//   dimension_label #1
+//   dimension_label #2
 //   ...
 Status ArraySchema::serialize(Buffer* buff) const {
   // Write version, which is always the current version. Despite
@@ -523,6 +544,18 @@ Status ArraySchema::serialize(Buffer* buff) const {
   for (auto& attr : attributes_)
     RETURN_NOT_OK(attr->serialize(buff, version));
 
+    // Write dimension labels
+#ifdef TILEDB_EXPERIMENTAL_FEATURES
+  if (version >= 15) {  // TODO: Change to 14 & experimental before merging
+    auto label_num = static_cast<uint32_t>(dimension_labels_.size());
+    if (label_num != dimension_labels_.size())
+      return Status_ArraySchemaError(
+          "Overflow when attempting to serialize label number.");
+    RETURN_NOT_OK(buff->write(&label_num, sizeof(uint32_t)));
+    for (auto& label : dimension_labels_)
+      RETURN_NOT_OK(std::get<0>(label)->serialize(buff, version));
+  }
+#endif
   return Status::Ok();
 }
 
@@ -588,6 +621,90 @@ Status ArraySchema::add_attribute(
   attribute_map_[attr->name()] = attr.get();
 
   return Status::Ok();
+}
+
+Status ArraySchema::add_dimension_label(
+    dimension_size_type dim_id,
+    const std::string& name,
+    shared_ptr<const AxisSchema> axis_schema,
+    bool check_name,
+    bool check_is_compatible) {
+  if (axis_schema == nullptr)
+    return LOG_STATUS(Status_ArraySchemaError(
+        "Cannot add dimension label; Input axis schema is null"));
+  if (dim_id >= domain_->dim_num())
+    return LOG_STATUS(Status_ArraySchemaError(
+        "Cannot add a label to dimension " + std::to_string(dim_id) +
+        "; Invalid dimension index. "));
+  auto dim = domain_->dimension_ptr(dim_id);
+  if (!(datatype_is_integer(dim->type()) || datatype_is_datetime(dim->type()) ||
+        datatype_is_time(dim->type())))
+    return LOG_STATUS(Status_ArraySchemaError(
+        "Cannot add dimension label; Currently labels are not support on "
+        "dimension with datatype Datatype::" +
+        datatype_str(dim->type())));
+  if (check_name) {
+    if (name != dim->name()) {
+      bool has_matching_name{false};
+      RETURN_NOT_OK(has_attribute(name, &has_matching_name));
+      if (has_matching_name)
+        return LOG_STATUS(Status_ArraySchemaError(
+            "Cannot add a dimension label with name '" + std::string(name) +
+            "'. An attribute with that name already exists."));
+      RETURN_NOT_OK(domain_->has_dimension(name, &has_matching_name));
+      if (has_matching_name)
+        return LOG_STATUS(Status_ArraySchemaError(
+            "Cannot add a dimension label with name '" + std::string(name) +
+            "'. A different dimension with that name already exists."));
+    }
+    auto found = dimension_label_map_.find(name);
+    if (found != dimension_label_map_.end())
+      return LOG_STATUS(Status_ArraySchemaError(
+          "Cannot add a dimension label with name '" + std::string(name) +
+          "'. A different label with that name already exists."));
+  }
+  if (check_is_compatible && !axis_schema->is_compatible_label(dim))
+    return LOG_STATUS(
+        Status_ArraySchemaError("Cannot add dimension label; The label axis "
+                                "schema is not compatible with the "
+                                "dimension it is being added to"));
+  auto dim_label = make_shared<DimensionLabel>(
+      dim_id,
+      name,
+      axis_schema->label_order(),
+      false,
+      URI("indexed", false),
+      URI("labelled", false),
+      axis_schema->label_attribute_id(),
+      axis_schema->index_attribute_id());
+  dimension_labels_.emplace_back(dim_label, axis_schema);
+  dimension_label_map_[name] = {dim_label.get(), axis_schema.get()};
+  return Status::Ok();
+}
+/** TODO: Add documentation. */
+Status ArraySchema::add_dimension_label(
+    dimension_size_type dim_id,
+    const std::string& name,
+    LabelOrder label_order,
+    shared_ptr<ArraySchema> index_schema,
+    shared_ptr<ArraySchema> label_schema,
+    bool check_name,
+    bool check_is_compatible) {
+  if (index_schema->attribute_num() > 1 || label_schema->attribute_num() > 1)
+    return LOG_STATUS(Status_ArraySchemaError(
+        "Cannot add dimension label; Support for labels with multiple "
+        "attributes is not implement"));
+  try {
+    return add_dimension_label(
+        dim_id,
+        name,
+        make_shared<AxisSchema>(
+            HERE(), label_order, index_schema, label_schema),
+        check_name,
+        check_is_compatible);
+  } catch (const std::invalid_argument& err) {
+    return LOG_STATUS(Status_ArraySchemaError(err.what()));
+  }
 }
 
 Status ArraySchema::drop_attribute(const std::string& attr_name) {
@@ -750,6 +867,27 @@ ArraySchema ArraySchema::deserialize(ConstBuffer* buff, const URI& uri) {
     attributes.emplace_back(make_shared<Attribute>(HERE(), move(attr.value())));
   }
 
+  // Load dimension labels
+  std::vector<
+      tuple<shared_ptr<const DimensionLabel>, shared_ptr<const AxisSchema>>>
+      dimension_labels;
+#ifdef TILEDB_EXPERIMENTAL_FEATURES
+  if (version >= 15) {
+    uint32_t label_num;
+    st = buff->read(&label_num, sizeof(uint32_t));
+    if (!st.ok())
+      throw std::runtime_error(
+          "[ArraySchema::deserialize] Cannot load dimension_label_num.");
+    for (uint32_t i{0}; i < label_num; ++i) {
+      auto&& [st_label, label]{DimensionLabel::deserialize(buff, version)};
+      if (!st_label.ok())
+        throw std::runtime_error(
+            "[ArraySchema::deserialize] Cannot deserialize dimension labels");
+      dimension_labels.emplace_back(std::move(label), nullptr);
+    }
+  }
+#endif
+
   // Validate
   if (cell_order == Layout::HILBERT &&
       domain.value()->dim_num() > Hilbert::HC_MAX_DIM) {
@@ -782,6 +920,7 @@ ArraySchema ArraySchema::deserialize(ConstBuffer* buff, const URI& uri) {
       tile_order,
       capacity,
       attributes,
+      dimension_labels,
       cell_var_filters.value(),
       cell_validity_filters,
       coords_filters.value());
@@ -944,14 +1083,39 @@ const std::string& ArraySchema::name() const {
 /*         PRIVATE METHODS        */
 /* ****************************** */
 
-bool ArraySchema::check_attribute_dimension_names() const {
+Status ArraySchema::check_attribute_dimension_label_names() const {
   std::set<std::string> names;
   auto dim_num = this->dim_num();
+  uint64_t expected_unique_names{dim_num + attributes_.size()};
   for (auto attr : attributes_)
     names.insert(attr->name());
   for (dimension_size_type i = 0; i < dim_num; ++i)
     names.insert(domain_->dimension_ptr(i)->name());
-  return (names.size() == attributes_.size() + dim_num);
+  if (names.size() != expected_unique_names)
+    return Status_ArraySchemaError(
+        "Array schema check failed; Attributes and dimensions must have unique "
+        "names");
+  expected_unique_names += dimension_labels_.size();
+  std::vector<bool> label_with_dim_name(dim_num, false);
+  for (const auto& label : dimension_labels_) {
+    const auto& label_name = std::get<0>(label)->name();
+    const auto dim_id = std::get<0>(label)->dimension_id();
+    if (label_name == domain_->dimension_ptr(dim_id)->name()) {
+      if (label_with_dim_name[dim_id])
+        return Status_ArraySchemaError(
+            "Array schema check failed; At most one dimension label can share "
+            "a name with the dimension it is on");
+      --expected_unique_names;
+      label_with_dim_name[dim_id] = true;
+    } else {
+      names.insert(label_name);
+    }
+  }
+  return (names.size() == expected_unique_names) ?
+             Status::Ok() :
+             Status_ArraySchemaError(
+                 "Array schema check failed; Dimension labels must have unique "
+                 "names from other labels, attributes, and dimensions");
 }
 
 Status ArraySchema::check_double_delta_compressor(

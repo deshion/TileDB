@@ -120,26 +120,36 @@ AxisSchema::AxisSchema(
     , index_attr_id_(0) {
   // Set-up indexed array
   std::vector<shared_ptr<Dimension>> index_dims{index_component->dimension()};
-  throw_if_not_ok(indexed_array_schema_->set_domain(
-      make_shared<Domain>(HERE(), cell_order, index_dims, tile_order)));
-  throw_if_not_ok(
-      indexed_array_schema_->add_attribute(label_component->attribute()));
-  indexed_array_schema_->set_capacity(capacity);
-  auto status = indexed_array_schema_->check();
+  auto status = indexed_array_schema_->set_domain(
+      make_shared<Domain>(HERE(), cell_order, index_dims, tile_order));
   if (!status.ok())
-    throw StatusException(Status_AxisSchemaError(
-        "Index array schema check failed; Index array schema is not valid."));
+    throw std::invalid_argument(
+        "Index array schema creation failed; Unable to add index dimension.");
+  status = indexed_array_schema_->add_attribute(label_component->attribute());
+  if (!status.ok())
+    throw std::invalid_argument(
+        "Index array schema creation failed; Unable to add label attribute.");
+  indexed_array_schema_->set_capacity(capacity);
+  status = indexed_array_schema_->check();
+  if (!status.ok())
+    throw std::invalid_argument(
+        "Index array schema check failed; Index array schema is not valid.");
   // Set-up labelled array
   std::vector<shared_ptr<Dimension>> label_dims{label_component->dimension()};
-  throw_if_not_ok(labelled_array_schema_->set_domain(make_shared<Domain>(
-      HERE(), Layout::ROW_MAJOR, label_dims, Layout::ROW_MAJOR)));
-  throw_if_not_ok(
-      labelled_array_schema_->add_attribute(index_component->attribute()));
+  status = labelled_array_schema_->set_domain(make_shared<Domain>(
+      HERE(), Layout::ROW_MAJOR, label_dims, Layout::ROW_MAJOR));
+  if (!status.ok())
+    throw std::invalid_argument(
+        "Label array schema creation failed; Unable to add label dimension.");
+  status = labelled_array_schema_->add_attribute(index_component->attribute());
+  if (!status.ok())
+    throw std::invalid_argument(
+        "Label array schema creation failed; Unabel to add index attribute.");
   labelled_array_schema_->set_capacity(capacity);
   status = labelled_array_schema_->check();
   if (!status.ok())
-    throw StatusException(Status_AxisSchemaError(
-        "Label array schema check failed; Label array schema is not valid."));
+    throw std::invalid_argument(
+        "Label array schema check failed; Label array schema is not valid.");
 }
 
 AxisSchema::AxisSchema(

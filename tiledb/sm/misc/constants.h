@@ -510,6 +510,15 @@ extern const std::string hilbert_str;
 /** The string representation of null. */
 extern const std::string null_str;
 
+/** The string representation of unordered label. */
+extern const std::string label_unordered_str;
+
+/** The string representation of forward order label. */
+extern const std::string label_forward_str;
+
+/** The string representation of reverse order label. */
+extern const std::string label_reverse_str;
+
 /** The string representation for object type invalid. */
 extern const std::string object_type_invalid_str;
 

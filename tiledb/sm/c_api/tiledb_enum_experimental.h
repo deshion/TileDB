@@ -1,8 +1,4 @@
-/**
- * @file label_order.h
- *
- * @section LICENSE
- *
+/*
  * The MIT License
  *
  * @copyright Copyright (c) 2022 TileDB, Inc.
@@ -24,44 +20,17 @@
  * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE.
- *
- * @section DESCRIPTION
- *
- * This defines the TileDB Label Order enum.
  */
 
-#ifndef TILEDB_LABEL_ORDER_H
-#define TILEDB_LABEL_ORDER_H
-
-#include <cassert>
-
-#include "tiledb/common/status.h"
-#include "tiledb/sm/misc/constants.h"
-
-using namespace tiledb::common;
-
-namespace tiledb::sm {
-
-/** Defines the query statuses. */
-enum class LabelOrder : uint8_t {
-#define TILEDB_LABEL_ORDER_ENUM(id) id
-#include "tiledb/sm/c_api/tiledb_enum_experimental.h"
-#undef TILEDB_LABEL_ORDER_ENUM
-};
-
-inline const std::string& label_order_str(LabelOrder order) {
-  switch (order) {
-    case LabelOrder::NO_ORDER:
-      return constants::label_unordered_str;
-    case LabelOrder::FORWARD:
-      return constants::label_forward_str;
-    case LabelOrder::REVERSE:
-      return constants::label_reverse_str;
-    default:
-      return constants::empty_str;
-  }
-}
-
-}  // namespace tiledb::sm
-
-#endif  // TILEDB_LABEL_ORDER_H
+// clang-format is disabled on the first enum so that we can manually indent it
+// properly.
+// clang-format off
+#ifdef TILEDB_LABEL_ORDER_ENUM
+    /** Ordered dimension label with increasing values. */
+    TILEDB_LABEL_ORDER_ENUM(FORWARD) = 0,
+    /** Ordered dimension label with decreasing values. */
+    TILEDB_LABEL_ORDER_ENUM(REVERSE) = 1,
+    /** Unordered dimension label. */
+    TILEDB_LABEL_ORDER_ENUM(NO_ORDER) = 2,
+#endif
+    // clang-format on

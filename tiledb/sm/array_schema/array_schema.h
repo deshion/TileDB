@@ -50,14 +50,17 @@ namespace tiledb {
 namespace sm {
 
 class Attribute;
+class AxisSchema;
 class Buffer;
 class ConstBuffer;
 class Dimension;
+class DimensionLabel;
 class Domain;
 
 enum class ArrayType : uint8_t;
 enum class Compressor : uint8_t;
 enum class Datatype : uint8_t;
+enum class LabelOrder : uint8_t;
 enum class Layout : uint8_t;
 
 /** Specifies the array schema. */
@@ -77,6 +80,12 @@ class ArraySchema {
    * indices.
    */
   using attribute_size_type = unsigned int;
+
+  /**
+   * Size type for the number of dimension labels in an array and for
+   * label indices.
+   */
+  using dimension_label_size_type = unsigned int;
 
   /* ********************************* */
   /*     CONSTRUCTORS & DESTRUCTORS    */
@@ -114,6 +123,9 @@ class ArraySchema {
       Layout tile_order,
       uint64_t capacity,
       std::vector<shared_ptr<const Attribute>> attributes,
+      std::vector<
+          tuple<shared_ptr<const DimensionLabel>, shared_ptr<const AxisSchema>>>
+          dimension_labels,
       FilterPipeline cell_var_offsets_filters,
       FilterPipeline cell_validity_filters,
       FilterPipeline coords_filters);
@@ -223,6 +235,9 @@ class ArraySchema {
   /** Returns the dimension types. */
   std::vector<Datatype> dim_types() const;
 
+  /** Returns the number of dimension labels. */
+  dimension_label_size_type dim_label_num() const;
+
   /** Returns the number of dimensions. */
   dimension_size_type dim_num() const;
 
@@ -244,6 +259,11 @@ class ArraySchema {
 
   /** Returns true if the input name is a dimension. */
   bool is_dim(const std::string& name) const;
+
+  /** Returns true if the input name is a dimension. */
+  bool is_dim_label(const std::string& name) const;
+
+  /** Returns true if the input name is a dimension label. */
 
   /** Returns true if the input name is a dimension, attribute or coords. */
   bool is_field(const std::string& name) const;
@@ -287,6 +307,24 @@ class ArraySchema {
    */
   Status add_attribute(
       shared_ptr<const Attribute> attr, bool check_special = true);
+
+  /** TODO: Add documentation. */
+  Status add_dimension_label(
+      dimension_size_type dim_id,
+      const std::string& name,
+      shared_ptr<const AxisSchema> axis_schema,
+      bool check_name = true,
+      bool check_is_compatible = true);
+
+  /** TODO: Add documentation. */
+  Status add_dimension_label(
+      dimension_size_type dim_id,
+      const std::string& name,
+      LabelOrder label_order,
+      shared_ptr<ArraySchema> index_schema,
+      shared_ptr<ArraySchema> label_schema,
+      bool check_name = true,
+      bool check_is_compatible = true);
 
   /**
    * Drops an attribute.
@@ -452,6 +490,17 @@ class ArraySchema {
    * Maintains lifespan for elements in both attributes_ and attribute_map_. */
   std::vector<shared_ptr<const Attribute>> attributes_;
 
+  /** The array dimension labels. */
+  std::vector<
+      tuple<shared_ptr<const DimensionLabel>, shared_ptr<const AxisSchema>>>
+      dimension_labels_;
+
+  /** A map from the dimension label names to the label schemas. */
+  std::unordered_map<
+      std::string,
+      tuple<const DimensionLabel*, const AxisSchema*>>
+      dimension_label_map_;
+
   /** The filter pipeline run on offset tiles for var-length attributes. */
   FilterPipeline cell_var_offsets_filters_;
 
@@ -472,7 +521,7 @@ class ArraySchema {
    * Returns false if the union of attribute and dimension names contain
    * duplicates.
    */
-  bool check_attribute_dimension_names() const;
+  Status check_attribute_dimension_label_names() const;
 
   /**
    * Returns error if double delta compression is used in the zipped

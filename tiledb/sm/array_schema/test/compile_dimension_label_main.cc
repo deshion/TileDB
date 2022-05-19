@@ -1,5 +1,5 @@
 /**
- * @file label_order.h
+ * @file tiledb/sm/array_schema/test/compile_dimension_label_main.cc
  *
  * @section LICENSE
  *
@@ -24,44 +24,11 @@
  * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE.
- *
- * @section DESCRIPTION
- *
- * This defines the TileDB Label Order enum.
  */
 
-#ifndef TILEDB_LABEL_ORDER_H
-#define TILEDB_LABEL_ORDER_H
+#include "tiledb/sm/array_schema/dimension_label.h"
 
-#include <cassert>
-
-#include "tiledb/common/status.h"
-#include "tiledb/sm/misc/constants.h"
-
-using namespace tiledb::common;
-
-namespace tiledb::sm {
-
-/** Defines the query statuses. */
-enum class LabelOrder : uint8_t {
-#define TILEDB_LABEL_ORDER_ENUM(id) id
-#include "tiledb/sm/c_api/tiledb_enum_experimental.h"
-#undef TILEDB_LABEL_ORDER_ENUM
-};
-
-inline const std::string& label_order_str(LabelOrder order) {
-  switch (order) {
-    case LabelOrder::NO_ORDER:
-      return constants::label_unordered_str;
-    case LabelOrder::FORWARD:
-      return constants::label_forward_str;
-    case LabelOrder::REVERSE:
-      return constants::label_reverse_str;
-    default:
-      return constants::empty_str;
-  }
+int main() {
+  (void)sizeof(tiledb::sm::DimensionLabel);
+  return 0;
 }
-
-}  // namespace tiledb::sm
-
-#endif  // TILEDB_LABEL_ORDER_H

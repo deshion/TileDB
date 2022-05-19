@@ -79,11 +79,21 @@ target_link_libraries(compile_domain PRIVATE domain)
 target_sources(compile_domain PRIVATE test/compile_domain_main.cc)
 
 #
+# `dimension_label` object library
+#
+add_library(dimension_label OBJECT dimension_label.cc)
+target_link_libraries(dimension_label PUBLIC baseline $<TARGET_OBJECTS:baseline>)
+target_link_libraries(dimension_label PUBLIC buffer $<TARGET_OBJECTS:buffer>)
+target_link_libraries(dimension_label PUBLIC constants $<TARGET_OBJECTS:constants>)
+target_link_libraries(dimension_label PUBLIC vfs $<TARGET_OBJECTS:vfs>)
+#
+# Test-c
 # `array_schema` object library
 #
 add_library(array_schema OBJECT array_schema.cc axis_schema.cc)
 target_link_libraries(array_schema PUBLIC attribute $<TARGET_OBJECTS:attribute>)
 target_link_libraries(array_schema PUBLIC domain $<TARGET_OBJECTS:domain>)
+target_link_libraries(array_schema PUBLIC dimension_label $<TARGET_OBJECTS:dimension_label>)
 target_link_libraries(array_schema PUBLIC time $<TARGET_OBJECTS:time>)
 target_link_libraries(array_schema PUBLIC uri_format $<TARGET_OBJECTS:uri_format>)
 target_link_libraries(array_schema PUBLIC uuid $<TARGET_OBJECTS:uuid>)
@@ -107,6 +117,9 @@ if (TILEDB_TESTS)
         test/main.cc
         test/unit_dimension.cc
         test/unit_domain_data.cc
+        test/unit_dimension_label.cc
+        test/unit_domain_data.cc
+        test/unit_array_schema.cc
         test/unit_axis_schema.cc
     )
 

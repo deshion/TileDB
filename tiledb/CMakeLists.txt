@@ -131,6 +131,7 @@ set(TILEDB_CORE_SOURCES
   ${TILEDB_CORE_INCLUDE_DIR}/tiledb/sm/array_schema/axis_schema.cc
   ${TILEDB_CORE_INCLUDE_DIR}/tiledb/sm/array_schema/attribute.cc
   ${TILEDB_CORE_INCLUDE_DIR}/tiledb/sm/array_schema/dimension.cc
+  ${TILEDB_CORE_INCLUDE_DIR}/tiledb/sm/array_schema/dimension_label.cc
   ${TILEDB_CORE_INCLUDE_DIR}/tiledb/sm/array_schema/domain.cc
   ${TILEDB_CORE_INCLUDE_DIR}/tiledb/sm/axis/axis.cc
   ${TILEDB_CORE_INCLUDE_DIR}/tiledb/sm/buffer/buffer.cc
@@ -299,6 +300,14 @@ if (TILEDB_SERIALIZATION)
   endif()
 
 endif()
+
+# TODO: Remove the following snippet before merging
+if (TILEDB_EXPERIMENTAL_FEATURES)
+    list(APPEND TILEDB_CORE_SOURCES
+      ${TILEDB_CORE_INCLUDE_DIR}/tiledb/sm/c_api/tiledb_dimension_label_experimental.cc
+    )
+endif()
+
 
 # 'External' source files included in the source tree.
 list(APPEND TILEDB_EXTERNALS_INCLUDE_DIRS
