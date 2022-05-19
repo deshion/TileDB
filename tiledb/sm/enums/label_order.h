@@ -1,5 +1,5 @@
 /**
- * @file compile_array_schema_main.cc
+ * @file label_order.h
  *
  * @section LICENSE
  *
@@ -24,13 +24,27 @@
  * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE.
+ *
+ * @section DESCRIPTION
+ *
+ * This defines the TileDB Label Order enum.
  */
 
-#include "../array_schema.h"
-#include "../axis_schema.h"
+#ifndef TILEDB_LABEL_ORDER_H
+#define TILEDB_LABEL_ORDER_H
 
-int main() {
-  (void)sizeof(tiledb::sm::ArraySchema);
-  (void)sizeof(tiledb::sm::AxisSchema);
-  return 0;
-}
+#include <cassert>
+
+#include "tiledb/common/status.h"
+#include "tiledb/sm/misc/constants.h"
+
+using namespace tiledb::common;
+
+namespace tiledb::sm {
+
+/** Defines the query statuses. */
+enum class LabelOrder : uint8_t { UNORDERED, FORWARD, REVERSE };
+
+}  // namespace tiledb::sm
+
+#endif  // TILEDB_LABEL_ORDER_H
