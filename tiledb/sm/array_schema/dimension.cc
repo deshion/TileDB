@@ -1856,7 +1856,7 @@ void Dimension::ensure_datatype_is_supported(Datatype type) const {
     case Datatype::STRING_UCS2:
     case Datatype::STRING_UCS4:
     case Datatype::ANY:
-      throw std::runtime_error(
+      throw std::logic_error(
           "Datatype::" + datatype_str(type) +
           " is not a valid Dimension Datatype");
     default:
