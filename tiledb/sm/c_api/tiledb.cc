@@ -1563,8 +1563,16 @@ int32_t tiledb_dimension_alloc(
   }
 
   // Create a new Dimension object
-  (*dim)->dim_ = new (std::nothrow)
-      tiledb::sm::Dimension(name, static_cast<tiledb::sm::Datatype>(type));
+  try {
+    (*dim)->dim_ = new (std::nothrow)
+        tiledb::sm::Dimension(name, static_cast<tiledb::sm::Datatype>(type));
+  } catch (std::exception& e) {
+    auto st = Status_Error(e.what());
+    LOG_STATUS(st);
+    save_error(ctx, st);
+    return TILEDB_ERR;
+  }
+
   if ((*dim)->dim_ == nullptr) {
     delete *dim;
     *dim = nullptr;

@@ -1000,6 +1000,9 @@ class Dimension {
   /** Returns the domain in string format. */
   std::string domain_str() const;
 
+  /** Throws error if the input type is not a supported Dimension Datatype. */
+  void ensure_datatype_is_supported(Datatype type) const;
+
   /** Returns the tile extent in string format. */
   std::string tile_extent_str() const;
 

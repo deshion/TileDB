@@ -2169,3 +2169,35 @@ TEST_CASE_METHOD(
   remove_temp_dir(local_fs.file_prefix() + local_fs.temp_dir());
 #endif
 }
+
+TEST_CASE_METHOD(
+    ArrayFx,
+    "Test unsupported dimension types",
+    "[array][dim_types][unsuported]") {
+  SupportedFsLocal local_fs;
+  std::string array_name =
+      local_fs.file_prefix() + local_fs.temp_dir() + "array_dim_types";
+  create_temp_dir(local_fs.file_prefix() + local_fs.temp_dir());
+
+  int64_t dim_domain[] = {1, 10, 1, 10};
+  int64_t tile_extent = 2;
+
+  // Vector of unsupported Dimension Datatypes
+  std::vector<tiledb_datatype_t> dim_types = {TILEDB_CHAR,
+                                              TILEDB_BLOB,
+                                              TILEDB_BOOL,
+                                              TILEDB_STRING_UTF8,
+                                              TILEDB_STRING_UTF16,
+                                              TILEDB_STRING_UTF32,
+                                              TILEDB_STRING_UCS2,
+                                              TILEDB_STRING_UCS4,
+                                              TILEDB_ANY};
+
+  for (tiledb_datatype_t dim_type : dim_types) {
+    tiledb_dimension_t* dim;
+    int rc = tiledb_dimension_alloc(
+        ctx_, "d1", dim_type, dim_domain, &tile_extent, &dim);
+    REQUIRE(rc == TILEDB_ERR);
+    tiledb_dimension_free(&dim);
+  }
+}
