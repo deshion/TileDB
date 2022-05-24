@@ -61,7 +61,8 @@ namespace tiledb {
  * domain.add_dimension(Dimension::create<int32_t>(ctx, "d", {{0, 1000}}, 100));
  * @endcode
  *
- * Note: the following Datatypes are not valid for Dimension:
+ * Note: as laid out in the Storage Format,
+ * the following Datatypes are not valid for Dimension:
  * TILEDB_CHAR, TILEDB_BLOB, TILEDB_BOOL, TILEDB_STRING_UTF8,
  * TILEDB_STRING_UTF16, TILEDB_STRING_UTF32, TILEDB_STRING_UCS2,
  * TILEDB_STRING_UCS4, TILEDB_ANY

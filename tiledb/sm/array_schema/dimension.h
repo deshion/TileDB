@@ -66,7 +66,14 @@ class FilterPipeline;
 enum class Compressor : uint8_t;
 enum class Datatype : uint8_t;
 
-/** Manipulates a TileDB dimension. */
+/** Manipulates a TileDB dimension.
+ *
+ * Note: as laid out in the Storage Format,
+ * the following Datatypes are not valid for Dimension:
+ * TILEDB_CHAR, TILEDB_BLOB, TILEDB_BOOL, TILEDB_STRING_UTF8,
+ * TILEDB_STRING_UTF16, TILEDB_STRING_UTF32, TILEDB_STRING_UCS2,
+ * TILEDB_STRING_UCS4, TILEDB_ANY
+ */
 class Dimension {
  public:
   /* ********************************* */

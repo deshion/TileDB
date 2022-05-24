@@ -364,10 +364,10 @@ inline bool datatype_is_boolean(Datatype type) {
   return (type == Datatype::BOOL);
 }
 
-/** Throws error if the input Datatype's enum is not between 0 and 40. */
+/** Throws error if the input Datatype's enum is not between 0 and 41. */
 inline void ensure_datatype_is_valid(Datatype type) {
   auto datatype_enum{::stdx::to_underlying(type)};
-  if (datatype_enum > 40) {
+  if (datatype_enum > 41) {
     throw std::runtime_error(
         "Invalid Datatype " + std::to_string(datatype_enum));
   }
@@ -376,7 +376,7 @@ inline void ensure_datatype_is_valid(Datatype type) {
 /** Throws error if:
  *
  * the datatype string is not valid as a datatype.
- * the datatype string's enum is not between 0 and 40.
+ * the datatype string's enum is not between 0 and 41.
  **/
 inline void ensure_datatype_str_is_valid(const std::string& datatype_str) {
   Datatype datatype_type;

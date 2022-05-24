@@ -1846,6 +1846,14 @@ std::string Dimension::domain_str() const {
 }
 
 void Dimension::ensure_datatype_is_supported(Datatype type) const {
+  try {
+    ensure_datatype_is_valid(type);
+  } catch (...) {
+    std::throw_with_nested(
+        std::logic_error("[Dimension::ensure_datatype_is_supported] "));
+    return;
+  }
+
   switch (type) {
     case Datatype::CHAR:
     case Datatype::BLOB:
