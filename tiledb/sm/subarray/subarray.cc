@@ -1851,7 +1851,10 @@ tuple<Status, optional<bool>> Subarray::non_overlapping_ranges(
       array_->array_schema_latest().dim_num(),
       [&](uint64_t dim_idx) {
         auto&& [status, nor]{non_overlapping_ranges_for_dim(dim_idx)};
-        non_overlapping_ranges = *nor;
+
+        if (!*nor) {
+          non_overlapping_ranges = false;
+        }
 
         return status;
       });
@@ -3017,6 +3020,7 @@ tuple<Status, optional<bool>> Subarray::non_overlapping_ranges_for_dim(
       return non_overlapping_ranges_for_dim<char>(dim_idx);
     case Datatype::CHAR:
     case Datatype::BLOB:
+    case Datatype::BOOL:
     case Datatype::STRING_UTF8:
     case Datatype::STRING_UTF16:
     case Datatype::STRING_UTF32:

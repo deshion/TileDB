@@ -169,7 +169,7 @@ Status SparseUnorderedWithDupsReader<BitmapType>::dowork() {
   }
 
   // Load initial data, if not loaded already.
-  RETURN_NOT_OK(load_initial_data());
+  RETURN_NOT_OK(load_initial_data(false));
 
   // Attributes names to process.
   std::vector<std::string> names;
@@ -207,8 +207,8 @@ Status SparseUnorderedWithDupsReader<BitmapType>::dowork() {
 
     if (!result_tiles_created.empty()) {
       // Read and unfilter coords.
-      RETURN_NOT_OK(
-          read_and_unfilter_coords(subarray_.is_set(), result_tiles_created));
+      RETURN_NOT_OK(read_and_unfilter_coords(
+          subarray_.is_set(), false, result_tiles_created));
 
       // Compute the tile bitmaps.
       RETURN_NOT_OK(compute_tile_bitmaps<BitmapType>(result_tiles_created));
@@ -444,7 +444,7 @@ SparseUnorderedWithDupsReader<BitmapType>::compute_parallelization_parameters(
   // Prevent processing past the end of the cells in case there are more
   // threads than cells.
   auto cell_num = max_pos_tile - min_pos_tile;
-  if (range_thread_idx > cell_num - 1) {
+  if (cell_num == 0 || range_thread_idx > cell_num - 1) {
     return {true, 0, 0, 0};
   }
 
@@ -1353,7 +1353,7 @@ Status SparseUnorderedWithDupsReader<BitmapType>::process_tiles(
             query_buffer));
       }
 
-      auto var_buffer_size = 0;
+      uint64_t var_buffer_size = 0;
 
       if (var_sized) {
         auto first_tile_min_pos =
@@ -1368,10 +1368,6 @@ Status SparseUnorderedWithDupsReader<BitmapType>::process_tiles(
                 first_tile_min_pos,
                 cell_offsets,
                 query_buffer);
-        if (new_result_tiles_size == 1 && cell_offsets[1] == 0) {
-          return Status_SparseUnorderedWithDupsReaderError(
-              "Var size buffer cannot fit a single cell for var attribute");
-        }
         buffers_full_ |= buffers_full;
 
         // Clear tiles from memory and adjust result_tiles.
