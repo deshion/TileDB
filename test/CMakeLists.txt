@@ -110,7 +110,6 @@ set(TILEDB_UNIT_TEST_SOURCES
   src/unit-capi-config.cc
   src/unit-capi-context.cc
   src/unit-capi-consolidation.cc
-  src/unit-capi-consolidation-with-timestamps.cc
   src/unit-capi-dense_array.cc
   src/unit-capi-dense_array_2.cc
   src/unit-capi-dense_neg.cc
@@ -191,6 +190,7 @@ if (TILEDB_CPP_API)
     src/unit-cppapi-config.cc
     src/unit-cppapi-consolidation-sparse.cc
     src/unit-cppapi-consolidation.cc
+    src/unit-cppapi-consolidation-with-timestamps.cc
     src/unit-cppapi-datetimes.cc
     src/unit-cppapi-time.cc
     src/unit-cppapi-fill_values.cc
@@ -201,6 +201,7 @@ if (TILEDB_CPP_API)
     src/unit-cppapi-metadata.cc
     src/unit-cppapi-nullable.cc
     src/unit-cppapi-query.cc
+    src/cpp-integration-query-condition.cc
     src/unit-cppapi-schema.cc
     src/unit-cppapi-string-dims.cc
     src/unit-cppapi-subarray.cc

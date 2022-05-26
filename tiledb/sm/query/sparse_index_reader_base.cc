@@ -197,7 +197,7 @@ SparseIndexReaderBase::get_coord_tiles_size(
   return {Status::Ok(), std::make_pair(tiles_size, tiles_size_qc)};
 }
 
-Status SparseIndexReaderBase::load_initial_data() {
+Status SparseIndexReaderBase::load_initial_data(bool include_timestamps) {
   if (initial_data_loaded_)
     return Status::Ok();
 
@@ -283,6 +283,11 @@ Status SparseIndexReaderBase::load_initial_data() {
       var_size_to_load.emplace_back(name);
   }
 
+  // Add timestamps if required.
+  if (include_timestamps) {
+    attr_tile_offsets_to_load.emplace_back(constants::timestamps);
+  }
+
   // Load tile offsets and var sizes for attributes.
   RETURN_CANCEL_OR_ERROR(load_tile_var_sizes(subarray_, var_size_to_load));
   RETURN_CANCEL_OR_ERROR(
@@ -294,7 +299,9 @@ Status SparseIndexReaderBase::load_initial_data() {
 }
 
 Status SparseIndexReaderBase::read_and_unfilter_coords(
-    bool include_coords, const std::vector<ResultTile*>& result_tiles) {
+    bool include_coords,
+    bool include_timestamps,
+    const std::vector<ResultTile*>& result_tiles) {
   auto timer_se = stats_->start_timer("read_and_unfilter_coords");
 
   // Not including coords or no query condition, exit.
@@ -317,6 +324,14 @@ Status SparseIndexReaderBase::read_and_unfilter_coords(
     for (const auto& dim_name : dim_names_) {
       RETURN_CANCEL_OR_ERROR(unfilter_tiles(dim_name, result_tiles, true));
     }
+  }
+
+  if (include_timestamps) {
+    std::vector<std::string> timestamps_names = {constants::timestamps};
+    RETURN_CANCEL_OR_ERROR(
+        read_attribute_tiles(timestamps_names, result_tiles, true));
+    RETURN_CANCEL_OR_ERROR(
+        unfilter_tiles(constants::timestamps, result_tiles, true));
   }
 
   if (!condition_.empty()) {
@@ -404,8 +419,9 @@ Status SparseIndexReaderBase::compute_tile_bitmaps(
           return Status::Ok();
 
         // Allocate the bitmap if not preallocated.
-        if (num_range_threads == 1)
+        if (num_range_threads == 1) {
           RETURN_NOT_OK(allocate_tile_bitmap(rt));
+        }
 
         // Prevent processing past the end of the cells in case there are more
         // threads than cells.
@@ -438,8 +454,8 @@ Status SparseIndexReaderBase::compute_tile_bitmaps(
 
           // For non overlapping ranges, if we have full overlap on any range
           // there is no need to compute bitmaps.
-          const bool is_uint8_t = std::is_same<BitmapType, uint8_t>::value;
-          if (is_uint8_t) {
+          const bool non_overlapping = std::is_same<BitmapType, uint8_t>::value;
+          if (non_overlapping) {
             std::vector<bool> covered_bitmap =
                 domain.dimension_ptr(dim_idx)->covered_vec(
                     ranges_for_dim, mbr[dim_idx], relevant_ranges);
@@ -476,8 +492,9 @@ Status SparseIndexReaderBase::compute_tile_bitmaps(
 
         // Only compute bitmap cells here if we are processing a single cell
         // range. If not, it will be done below.
-        if (num_range_threads == 1)
+        if (num_range_threads == 1) {
           RETURN_NOT_OK(count_tile_bitmap_cells(rt));
+        }
 
         return Status::Ok();
       });
@@ -518,10 +535,13 @@ Status SparseIndexReaderBase::count_tile_bitmap_cells(
     rt->bitmap_result_num_ += rt->bitmap_[c];
   }
 
-  // Clear the bitmap, which will also signal the copy operation to copy the
-  // whole tile.
-  if (rt->bitmap_result_num_ == cell_num) {
-    rt->bitmap_.resize(0);
+  const bool non_overlapping = std::is_same<BitmapType, uint8_t>::value;
+  if (non_overlapping) {
+    // Clear the bitmap, which will also signal the copy operation to copy the
+    // whole tile.
+    if (rt->bitmap_result_num_ == cell_num) {
+      rt->bitmap_.resize(0);
+    }
   }
 
   return Status::Ok();
