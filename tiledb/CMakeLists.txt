@@ -134,6 +134,7 @@ set(TILEDB_CORE_SOURCES
   ${TILEDB_CORE_INCLUDE_DIR}/tiledb/sm/array_schema/domain.cc
   ${TILEDB_CORE_INCLUDE_DIR}/tiledb/sm/axis/axis.cc
   ${TILEDB_CORE_INCLUDE_DIR}/tiledb/sm/axis_query/axis_query.cc
+  ${TILEDB_CORE_INCLUDE_DIR}/tiledb/sm/axis_query/range_query.cc
   ${TILEDB_CORE_INCLUDE_DIR}/tiledb/sm/buffer/buffer.cc
   ${TILEDB_CORE_INCLUDE_DIR}/tiledb/sm/buffer/buffer_list.cc
   ${TILEDB_CORE_INCLUDE_DIR}/tiledb/sm/c_api/api_argument_validator.cc
@@ -1060,7 +1061,7 @@ if (TILEDB_VERSION)
     FILES "${TILEDB_PROJECT_CONFIG_VERSION_FILE}"
     DESTINATION "${CONFIG_INSTALL_DIR}"
   )
-endif() 
+endif()
 
 # Install targets file to <prefix>/lib/cmake/TileDB/TileDBTargets.cmake
 install(

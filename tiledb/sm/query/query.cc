@@ -143,7 +143,7 @@ Status Query::add_label_range(
     return logger_->status(
         Status_QueryError("Cannot add range; Query is not set to be by label "
                           "on this dimension index."));
-  return label_queries_[dim_idx]->add_range(start, end, stride);
+  return label_queries_[dim_idx]->add_label_range(start, end, stride);
 }
 
 Status Query::add_range(
@@ -152,7 +152,7 @@ Status Query::add_range(
     return logger_->status(
         Status_QueryError("Cannot add range; Invalid dimension index"));
 
-  if (label_queries_[dim_idx])
+  if (label_queries_[dim_idx])  // TODO Change to have explicit check for ranges
     return logger_->status(
         Status_QueryError("Cannot add range; Ranges already set to label on "
                           "this dimension index"));
@@ -216,9 +216,10 @@ Status Query::add_range_var(
     return logger_->status(
         Status_QueryError("Cannot add range; Invalid dimension index"));
 
-  if (label_queries_[dim_idx])
-    return label_queries_[dim_idx]->add_range_var(
-        start, start_size, end, end_size);
+  if (label_queries_[dim_idx])  // TODO Change to explicit check if range is set
+    return logger_->status(
+        Status_QueryError("Cannot add range; Ranges already set to label on "
+                          "this dimension index"));
 
   if ((start == nullptr && start_size != 0) ||
       (end == nullptr && end_size != 0))
@@ -255,16 +256,13 @@ Status Query::apply_label(const unsigned dim_idx) {
     labels_applied_[dim_idx] = true;
     return Status::Ok();
   }
-  if (label_query->status() != QueryStatus::COMPLETED)
-    // TODO Change to log immediately
-    return Status_QueryError(
-        "Cannot apply label on dimension " + std::to_string(dim_idx) +
-        ". Label query is not completed.");
   // TODO Add method to subarray that clears the ranges. Call here.
-  auto&& [status, start, count] = label_query->get_index_point_ranges();
-  if (!status.ok())  // Figure out how to log status immediately
-    return status;
-  RETURN_NOT_OK(subarray_.add_point_ranges(dim_idx, start, count));
+  auto&& [status, range] = label_query->get_index_range();
+  if (!status.ok())
+    return logger_->status(Status_QueryError(
+        "Cannot apply label on dimension " + std::to_string(dim_idx) +
+        ". Label query failed."));
+  RETURN_NOT_OK(subarray_.add_range(dim_idx, std::move(range)));
   labels_applied_[dim_idx] = true;
   return Status::Ok();
 }
@@ -1453,16 +1451,6 @@ Status Query::set_data_buffer(
         std::string("Cannot set buffer; Invalid attribute/dimension '") + name +
         "'"));
 
-  // Temporary code for unordered label
-  if (is_dim) {
-    unsigned dim_idx;
-    RETURN_NOT_OK(array_schema_->domain().get_dimension_index(name, &dim_idx));
-    if (label_queries_[dim_idx])
-      // TODO: Do I need to make this specific to sparse writes?
-      return label_queries_[dim_idx]->set_index_data_buffer(
-          buffer, buffer_size, check_null_buffers);
-  }
-
   if (array_schema_->dense() && type_ == QueryType::WRITE && !is_attr) {
     return logger_->status(Status_QueryError(
         std::string("Dense write queries cannot set dimension buffers")));
@@ -1528,6 +1516,7 @@ Status Query::set_label_data_buffer(
   auto label_query = label_map_.find(name);
   if (label_query == label_map_.end())
     return Status_QueryError("No label with name '" + name + "'.");
+  RETURN_NOT_OK(label_query->second->create_data_query());
   return label_query->second->set_label_data_buffer(
       buffer, buffer_size, check_null_buffers);
 }
@@ -1659,8 +1648,8 @@ Status Query::set_external_label(
           "implemented.");
       break;
     case LabelOrder::FORWARD:
-      label_queries_[dim_idx] = make_shared<OrderedAxisQuery>(
-          HERE(), axis, storage_manager_, label_name);
+      label_queries_[dim_idx] =
+          make_shared<OrderedAxisQuery>(HERE(), axis, storage_manager_);
       break;
     default:
       return Status_QueryError("Invalid label order type.");
@@ -2153,7 +2142,17 @@ Status Query::submit() {
     return rest_client->submit_query_to_rest(array_->array_uri(), this);
   }
   RETURN_NOT_OK(init());
-  return storage_manager_->query_submit(this);
+  RETURN_NOT_OK(storage_manager_->query_submit(this));
+  for (ArraySchema::dimension_size_type dim_idx = 0;
+       dim_idx < array_schema_->dim_num();
+       ++dim_idx) {
+    if (label_queries_[dim_idx]) {
+      label_queries_[dim_idx]->set_index_ranges(
+          subarray_.ranges_for_dim(dim_idx));
+      RETURN_NOT_OK(label_queries_[dim_idx]->submit_data_query());
+    }
+  }
+  return Status::Ok();
 }
 
 Status Query::submit_async(
@@ -2177,7 +2176,7 @@ Status Query::submit_async(
 Status Query::submit_labels() {
   for (auto& label_query : label_queries_) {
     if (label_query)
-      RETURN_NOT_OK(label_query->submit());
+      RETURN_NOT_OK(label_query->resolve_labels());
   }
   return Status::Ok();
 }

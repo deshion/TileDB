@@ -33,6 +33,7 @@
 #include "test/src/helpers.h"
 #include "test/src/vfs_helpers.h"
 #include "tiledb/sm/axis/axis.h"
+#include "tiledb/sm/axis_query/axis_query.h"
 #include "tiledb/sm/c_api/tiledb_struct_def.h"
 #include "tiledb/sm/enums/encryption_type.h"
 #include "tiledb/sm/enums/label_order.h"
@@ -215,6 +216,114 @@ TEST_CASE_METHOD(
   create_main_array_1d(main_array_name, ctx);
   create_uniform_label(index_array_name, label_array_name, ctx);
 
+  SECTION("Read range from an axis") {
+    // Open the axis.
+    URI indexed_uri{index_array_name.c_str()};
+    URI labelled_uri{label_array_name.c_str()};
+    auto axis = make_shared<Axis>(
+        HERE(),
+        indexed_uri,
+        labelled_uri,
+        ctx->ctx_->storage_manager(),
+        LabelOrder::FORWARD);
+    auto status =
+        axis->open(QueryType::READ, EncryptionType::NO_ENCRYPTION, nullptr, 0);
+    if (!status.ok())
+      INFO("Open axis: " + status.to_string());
+    REQUIRE(status.ok());
+
+    // Create axis query.
+    OrderedAxisQuery query{axis, ctx->ctx_->storage_manager()};
+
+    // Set label range
+    std::vector<int64_t> range{-8, -5};
+    status = query.add_label_range(&range[0], &range[1], nullptr);
+    if (!status.ok())
+      INFO("Set label range: " + status.to_string());
+    REQUIRE(status.ok());
+
+    // Submit label query and check for success.
+    status = query.resolve_labels();
+    if (!status.ok())
+      INFO("Resolve labels: " + status.to_string());
+    REQUIRE(status.ok());
+
+    // Submit main query and check for success.
+    auto query_status = query.status_resolve_labels();
+    INFO("Query status resolve labels: " + query_status_str(query_status));
+
+    auto&& [range_status, index_range] = query.get_index_range();
+    REQUIRE(range_status.ok());
+    auto range_data = static_cast<const uint64_t*>(index_range.data());
+    CHECK(range_data[0] == 9);
+    CHECK(range_data[1] == 12);
+
+    // Close and clean-up the array
+    auto close_status = axis->close();
+    CHECK(close_status.ok());
+  }
+  SECTION("Read label data from an axis") {
+    // Open the axis.
+    URI indexed_uri{index_array_name.c_str()};
+    URI labelled_uri{label_array_name.c_str()};
+    auto axis = make_shared<Axis>(
+        HERE(),
+        indexed_uri,
+        labelled_uri,
+        ctx->ctx_->storage_manager(),
+        LabelOrder::FORWARD);
+    auto status =
+        axis->open(QueryType::READ, EncryptionType::NO_ENCRYPTION, nullptr, 0);
+    if (!status.ok())
+      INFO("Open axis: " + status.to_string());
+    REQUIRE(status.ok());
+
+    // Create axis data query.
+    OrderedAxisQuery query{axis, ctx->ctx_->storage_manager()};
+    status = query.create_data_query();
+    if (!status.ok())
+      INFO("Create data query: " + status.to_string());
+    REQUIRE(status.ok());
+
+    // Set index ranges.
+    std::vector<uint64_t> index_range{9, 12};
+    std::vector<Range> ranges{Range(&index_range[0], 2 * sizeof(uint64_t))};
+    status = query.set_index_ranges(ranges);
+    if (!status.ok())
+      INFO("Set index ranges: " + status.to_string());
+    REQUIRE(status.ok());
+
+    // Set label data buffer
+    std::vector<int64_t> label(16);
+    uint64_t label_size{label.size() * sizeof(int64_t)};
+    status = query.set_label_data_buffer(&label[0], &label_size, true);
+    if (!status.ok())
+      INFO("Set label data buffer: " + status.to_string());
+    REQUIRE(status.ok());
+
+    // Submit label query and check for success.
+    status = query.submit_data_query();
+    if (!status.ok())
+      INFO("Submit data query: " + status.to_string());
+    REQUIRE(status.ok());
+
+    // Submit main query and check for success.
+    auto query_status = query.status_data_query();
+    INFO("Query status label data: " + query_status_str(query_status));
+
+    // Close and clean-up the array
+    auto close_status = axis->close();
+    if (!close_status.ok())
+      INFO("Close axis: " + status.to_string());
+    CHECK(close_status.ok());
+
+    // Check results
+    std::vector<int64_t> expected_label{-8, -7, -6, -5};
+    expected_label.resize(16, 0);
+    for (size_t ii{0}; ii < 16; ++ii) {
+      CHECK(label[ii] == expected_label[ii]);
+    }
+  }
   SECTION("Read label and set all buffer") {
     // Open the array
     tiledb_array_t* main_array;
@@ -234,7 +343,8 @@ TEST_CASE_METHOD(
         LabelOrder::FORWARD);
     auto status =
         axis->open(QueryType::READ, EncryptionType::NO_ENCRYPTION, nullptr, 0);
-    INFO(status.to_string());
+    if (!status.ok())
+      INFO("Open axis: " + status.to_string());
     REQUIRE(status.ok());
 
     // Create query and set standard data.
@@ -242,37 +352,41 @@ TEST_CASE_METHOD(
     query.set_layout(Layout::ROW_MAJOR);
     std::vector<float> a1(4);
     uint64_t a1_size{a1.size() * sizeof(float)};
+    status = Status::Ok();
     status = query.set_data_buffer("a1", &a1[0], &a1_size);
+    if (!status.ok())
+      INFO(status.to_string());
     REQUIRE(status.ok());
 
     // Set ranges.
     query.set_external_label(0, "label0", axis);
     std::vector<int64_t> range{-8, -5};
     status = query.add_label_range(0, &range[0], &range[1], nullptr);
-    REQUIRE(status.ok());
-
-    // Set index data buffer
-    std::vector<uint64_t> index(4);
-    uint64_t index_size{index.size() * sizeof(uint64_t)};
-    status = query.set_data_buffer("dim0", &index[0], &index_size);
+    if (!status.ok())
+      INFO("Set label range: " + status.to_string());
     REQUIRE(status.ok());
 
     // Set label data buffer
     std::vector<int64_t> label(4);
     uint64_t label_size{label.size() * sizeof(int64_t)};
     status = query.set_label_data_buffer("label0", &label[0], &label_size);
+    if (!status.ok())
+      INFO("Set label data buffer: " + status.to_string());
     REQUIRE(status.ok());
 
     // Submit label query and check for success.
     status = query.submit_labels();
     REQUIRE(status.ok());
     status = query.apply_labels();
-    INFO(status.to_string());
+    if (!status.ok())
+      INFO("Apply labels: " + status.to_string());
     REQUIRE(status.ok());
 
     // Submit main query and check for success.
     status = query.submit();
-    CHECK(status.ok());
+    if (!status.ok())
+      INFO("Submit query: " + status.to_string());
+    REQUIRE(status.ok());
     INFO(query_status_str(query.status()));
     CHECK(query.status() == QueryStatus::COMPLETED);
 
@@ -288,13 +402,11 @@ TEST_CASE_METHOD(
 
     // Check results
     std::vector<int64_t> expected_label{-8, -7, -6, -5};
-    std::vector<uint64_t> expected_index{9, 10, 11, 12};
-    std::vector<float> expected_a1{0.9, 1.0, 1.1, 1.2};
+    std::vector<float> expected_a1{0.9f, 1.0f, 1.1f, 1.2f};
 
     for (size_t ii{0}; ii < 4; ++ii) {
       INFO("Label " << std::to_string(ii));
       CHECK(label[ii] == expected_label[ii]);
-      CHECK(index[ii] == expected_index[ii]);
       CHECK(a1[ii] == expected_a1[ii]);
     }
   }
