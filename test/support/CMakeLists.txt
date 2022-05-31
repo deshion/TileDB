@@ -28,11 +28,10 @@
 find_package(Catch_EP REQUIRED)
 
 # Include TileDB core header directories
-#set(TILEDB_CORE_INCLUDE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/..")
 set(TILEDB_CORE_INCLUDE_DIR "${CMAKE_SOURCE_DIR}")
+
 # Include the C API directory so that the C++ 'tiledb' file can directly
 # include "tiledb.h".
-#list(APPEND TILEDB_CORE_INCLUDE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/../tiledb/sm/c_api")
 list(APPEND TILEDB_CORE_INCLUDE_DIR "${CMAKE_SOURCE_DIR}/tiledb/sm/c_api")
 
 # Gather the test source files
