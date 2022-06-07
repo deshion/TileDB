@@ -6733,6 +6733,7 @@ TEST_CASE_METHOD(
 }
 
 #ifndef _WIN32
+#ifndef TILEDB_EXPERIMENTAL_FEATURES
 TEST_CASE_METHOD(
     ConsolidationFx,
     "C API: Test consolidation, sparse, commits, mixed versions",
@@ -6795,6 +6796,7 @@ TEST_CASE_METHOD(
 
   remove_sparse_array();
 }
+#endif
 #endif
 
 TEST_CASE_METHOD(

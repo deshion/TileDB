@@ -684,6 +684,7 @@ TEST_CASE(
 TEST_CASE(
     "Backwards compatibility: Write to an array of older version",
     "[backwards-compat][write-to-older-version]") {
+#ifndef TILEDB_EXPERIMENTAL_FEATURES
   std::string old_array_name(arrays_dir + "/non_split_coords_v1_4_0");
   Context ctx;
   std::string fragment_uri;
@@ -726,6 +727,7 @@ TEST_CASE(
   } catch (const std::exception& e) {
     CHECK(false);
   }
+#endif
 }
 
 TEST_CASE(

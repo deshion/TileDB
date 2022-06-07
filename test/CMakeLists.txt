@@ -248,6 +248,10 @@ if (TILEDB_VERBOSE)
   add_definitions(-DTILEDB_VERBOSE)
 endif()
 
+if (TILEDB_EXPERIMENTAL_FEATURES)
+  add_definitions(-DTILEDB_EXPERIMENTAL_FEATURES)
+endif()
+
 add_library(tiledb_test_support_lib EXCLUDE_FROM_ALL
   $<TARGET_OBJECTS:TILEDB_CORE_OBJECTS>
   ${TILEDB_TEST_SUPPORT_SOURCES}

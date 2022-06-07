@@ -249,6 +249,23 @@ StorageManager::array_open_for_reads(Array* array) {
           *array->encryption_key());
   RETURN_NOT_OK_TUPLE(st, nullopt, nullopt, nullopt);
 
+// If TILEDB_EXPERIMENTAL is defined, this library should not be able to
+// read from newer-versioned arrays
+#ifdef TILEDB_EXPERIMENTAL_FEATURES
+  auto version = array_schema_latest.value()->version();
+  if (version > constants::format_version) {
+    std::stringstream err;
+    err << "Cannot open array for writes; Array format version (";
+    err << version;
+    err << ") is newer than library format version (";
+    err << constants::format_version << ")";
+    return {logger_->status(Status_StorageManagerError(err.str())),
+            nullopt,
+            nullopt,
+            nullopt};
+  }
+#endif
+
   // Mark the array as open
   std::lock_guard<std::mutex> lock{open_arrays_mtx_};
   open_arrays_.insert(array);
@@ -269,6 +286,22 @@ StorageManager::array_open_for_reads_without_fragments(Array* array) {
   auto&& [st_schemas, array_schema_latest, array_schemas_all] =
       load_array_schemas(array->array_directory(), *array->encryption_key());
   RETURN_NOT_OK_TUPLE(st_schemas, nullopt, nullopt);
+
+// If TILEDB_EXPERIMENTAL is defined, this library should not be able to
+// read from newer-versioned arrays
+#ifdef TILEDB_EXPERIMENTAL_FEATURES
+  auto version = array_schema_latest.value()->version();
+  if (version > constants::format_version) {
+    std::stringstream err;
+    err << "Cannot open array for writes; Array format version (";
+    err << version;
+    err << ") is newer than library format version (";
+    err << constants::format_version << ")";
+    return {logger_->status(Status_StorageManagerError(err.str())),
+            nullopt,
+            nullopt};
+  }
+#endif
 
   // Mark the array as now open
   std::lock_guard<std::mutex> lock{open_arrays_mtx_};
@@ -294,9 +327,23 @@ StorageManager::array_open_for_writes(Array* array) {
       load_array_schemas(array->array_directory(), *array->encryption_key());
   RETURN_NOT_OK_TUPLE(st_schemas, nullopt, nullopt);
 
-  // This library should not be able to write to newer-versioned arrays
+  // If TILEDB_EXPERIMENTAL is defined, this library should not be able to
+  // write to newer-versioned or older-versioned arrays
+  // Else, this library should not be able to write to newer-versioned arrays
   // (but it is ok to write to older arrays)
   auto version = array_schema_latest.value()->version();
+#ifdef TILEDB_EXPERIMENTAL_FEATURES
+  if (version != constants::format_version) {
+    std::stringstream err;
+    err << "Cannot open array for writes; Array format version (";
+    err << version;
+    err << ") is not the library format version (";
+    err << constants::format_version << ")";
+    return {logger_->status(Status_StorageManagerError(err.str())),
+            nullopt,
+            nullopt};
+  }
+#endif
   if (version > constants::format_version) {
     std::stringstream err;
     err << "Cannot open array for writes; Array format version (";
