@@ -255,7 +255,7 @@ StorageManager::array_open_for_reads(Array* array) {
   auto version = array_schema_latest.value()->version();
   if (version > constants::format_version) {
     std::stringstream err;
-    err << "Cannot open array for writes; Array format version (";
+    err << "Cannot open array for reads; Array format version (";
     err << version;
     err << ") is newer than library format version (";
     err << constants::format_version << ")";
@@ -293,7 +293,7 @@ StorageManager::array_open_for_reads_without_fragments(Array* array) {
   auto version = array_schema_latest.value()->version();
   if (version > constants::format_version) {
     std::stringstream err;
-    err << "Cannot open array for writes; Array format version (";
+    err << "Cannot open array for reads; Array format version (";
     err << version;
     err << ") is newer than library format version (";
     err << constants::format_version << ")";
