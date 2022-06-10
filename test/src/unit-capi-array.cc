@@ -73,8 +73,6 @@ struct ArrayFx {
   tiledb_encryption_type_t encryption_type_ = TILEDB_NO_ENCRYPTION;
   const char* encryption_key_ = nullptr;
 
-  // rd/tiledb_bool-disallow_dimensions
-
   // Functions
   ArrayFx();
   ~ArrayFx();
@@ -360,22 +358,6 @@ void ArrayFx::create_dense_array(const std::string& path) {
   tiledb_domain_free(&domain);
   tiledb_array_schema_free(&array_schema);
 }
-
-/*void ArrayFx::create_dimension(const tiledb_datatype_t dim_type) {
-  int64_t dim_domain[] = {1, 10, 1, 10};
-  int64_t tile_extent = 2;
-
-  tiledb_dimension_t* dim;
-  int rc = tiledb_dimension_alloc(
-    ctx_, "dim", dim_type, dim_domain, &tile_extent, &dim);
-
-  try {
-    dim.ensure_datatype_is_supported(dim_type);
-  } catch (...) {
-    REQUIRE(rc == TILEDB_ERR);
-  }
-
-}*/
 
 void ArrayFx::array_serialize_wrapper(
     tiledb_array_t* array, tiledb_array_t* new_array) {
