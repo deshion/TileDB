@@ -446,6 +446,12 @@ if (TILEDB_SERIALIZATION)
   endif()
 endif()
 
+if (TILEDB_EXPERIMENTAL_FEATURES)
+  add_compile_definitions(TILEDB_EXPERIMENTAL_FEATURES)
+    message(STATUS "The TileDB library is compiled with experimental features.")
+endif()
+
+
 ############################################################
 # Dependencies: set up includes/linking
 ############################################################

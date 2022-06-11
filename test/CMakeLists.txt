@@ -33,6 +33,12 @@ option(TILEDB_TESTS_AWS_S3_CONFIG "Use an S3 config appropriate for AWS in tests
 option(TILEDB_TESTS_ENABLE_REST "Enables REST tests (requires running REST server)" OFF)
 
 
+if (TILEDB_EXPERIMENTAL_FEATURES)
+  add_compile_definitions(TILEDB_EXPERIMENTAL_FEATURES)
+    message(STATUS "The TileDB library is compiled with experimental features.")
+endif()
+
+
 # Arrow integration test config and dependencies
 # Override from environment if not set in cache
 if (NOT DEFINED $CACHE{TILEDB_ARROW_TESTS})

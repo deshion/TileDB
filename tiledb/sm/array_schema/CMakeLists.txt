@@ -26,6 +26,12 @@
 
 include(common NO_POLICY_SCOPE)
 
+if (TILEDB_EXPERIMENTAL_FEATURES)
+  add_compile_definitions(TILEDB_EXPERIMENTAL_FEATURES)
+    message(STATUS "The TileDB library is compiled with experimental features.")
+endif()
+
+
 #
 # `attribute` object library
 #
