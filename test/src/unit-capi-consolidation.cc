@@ -6733,70 +6733,71 @@ TEST_CASE_METHOD(
 }
 
 #ifndef _WIN32
-#ifndef TILEDB_EXPERIMENTAL_FEATURES
 TEST_CASE_METHOD(
     ConsolidationFx,
     "C API: Test consolidation, sparse, commits, mixed versions",
     "[capi][consolidation][commits][mixed-versions]") {
-  remove_sparse_array();
+  if constexpr (!is_experimental_build) {
+    remove_sparse_array();
 
-  // Get the v11 sparse array.
-  std::string v11_arrays_dir =
-      std::string(TILEDB_TEST_INPUTS_DIR) + "/arrays/sparse_array_v11";
-  REQUIRE(
-      tiledb_vfs_copy_dir(
-          ctx_, vfs_, v11_arrays_dir.c_str(), SPARSE_ARRAY_NAME) == TILEDB_OK);
+    // Get the v11 sparse array.
+    std::string v11_arrays_dir =
+        std::string(TILEDB_TEST_INPUTS_DIR) + "/arrays/sparse_array_v11";
+    REQUIRE(
+        tiledb_vfs_copy_dir(
+            ctx_, vfs_, v11_arrays_dir.c_str(), SPARSE_ARRAY_NAME) ==
+        TILEDB_OK);
 
-  // Write v11 fragment.
-  write_sparse_full();
+    // Write v11 fragment.
+    write_sparse_full();
 
-  // Upgrade to latest version.
-  REQUIRE(
-      tiledb_array_upgrade_version(ctx_, SPARSE_ARRAY_NAME, nullptr) ==
-      TILEDB_OK);
+    // Upgrade to latest version.
+    REQUIRE(
+        tiledb_array_upgrade_version(ctx_, SPARSE_ARRAY_NAME, nullptr) ==
+        TILEDB_OK);
 
-  // Consolidation works.
-  write_sparse_unordered();
-  consolidate_sparse("commits");
-  read_sparse_full_unordered();
-  check_commits_dir_sparse(1, 1, 0);
-  check_ok_num(1);
+    // Consolidation works.
+    write_sparse_unordered();
+    consolidate_sparse("commits");
+    read_sparse_full_unordered();
+    check_commits_dir_sparse(1, 1, 0);
+    check_ok_num(1);
 
-  // Vacuum works.
-  vacuum_sparse("commits");
-  read_sparse_full_unordered();
-  check_commits_dir_sparse(1, 0, 0);
-  check_ok_num(0);
+    // Vacuum works.
+    vacuum_sparse("commits");
+    read_sparse_full_unordered();
+    check_commits_dir_sparse(1, 0, 0);
+    check_ok_num(0);
 
-  // Second consolidation works.
-  consolidate_sparse("commits");
-  read_sparse_full_unordered();
-  check_commits_dir_sparse(2, 0, 0);
+    // Second consolidation works.
+    consolidate_sparse("commits");
+    read_sparse_full_unordered();
+    check_commits_dir_sparse(2, 0, 0);
 
-  // Second vacuum works.
-  vacuum_sparse("commits");
-  read_sparse_full_unordered();
-  check_commits_dir_sparse(1, 0, 0);
+    // Second vacuum works.
+    vacuum_sparse("commits");
+    read_sparse_full_unordered();
+    check_commits_dir_sparse(1, 0, 0);
 
-  // After fragment consolidation and vacuuming, array is still valid.
-  consolidate_sparse();
-  vacuum_sparse();
-  read_sparse_full_unordered();
-  check_commits_dir_sparse(1, 1, 1);
+    // After fragment consolidation and vacuuming, array is still valid.
+    consolidate_sparse();
+    vacuum_sparse();
+    read_sparse_full_unordered();
+    check_commits_dir_sparse(1, 1, 1);
 
-  // Consolidation to get rid of ignore file.
-  consolidate_sparse("commits");
-  read_sparse_full_unordered();
-  check_commits_dir_sparse(2, 1, 1);
+    // Consolidation to get rid of ignore file.
+    consolidate_sparse("commits");
+    read_sparse_full_unordered();
+    check_commits_dir_sparse(2, 1, 1);
 
-  // Second vacuum works.
-  vacuum_sparse("commits");
-  read_sparse_full_unordered();
-  check_commits_dir_sparse(1, 0, 0);
+    // Second vacuum works.
+    vacuum_sparse("commits");
+    read_sparse_full_unordered();
+    check_commits_dir_sparse(1, 0, 0);
 
-  remove_sparse_array();
+    remove_sparse_array();
+  }  // !is_experimental_build
 }
-#endif
 #endif
 
 TEST_CASE_METHOD(

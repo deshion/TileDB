@@ -54,7 +54,6 @@ namespace tdb = tiledb::common;
 using std::shared_ptr;
 using tiledb::common::allocator;
 using tiledb::common::make_shared;
-// using tiledb::common::make_unique;
 
 /*
  * Exception
@@ -64,5 +63,14 @@ using tiledb::common::make_shared;
 #include "exception/exception.h"
 using tiledb::common::StatusException;
 using tiledb::common::throw_if_not_ok;
+
+/*
+ * Experimental build
+ */
+#ifndef TILEDB_EXPERIMENTAL_FEATURES
+constexpr bool is_experimental_build = false;
+#else
+constexpr bool is_experimental_build = true;
+#endif  // TILEDB_EXPERIMENTAL_FEATURES
 
 #endif  // TILEDB_COMMON_COMMON_H
