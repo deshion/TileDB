@@ -67,10 +67,10 @@ using tiledb::common::throw_if_not_ok;
 /*
  * Experimental build
  */
-#ifndef TILEDB_EXPERIMENTAL_FEATURES
-constexpr bool is_experimental_build = false;
-#else
+#ifdef TILEDB_EXPERIMENTAL_FEATURES
 constexpr bool is_experimental_build = true;
+#else
+constexpr bool is_experimental_build = false;
 #endif  // TILEDB_EXPERIMENTAL_FEATURES
 
 #endif  // TILEDB_COMMON_COMMON_H
