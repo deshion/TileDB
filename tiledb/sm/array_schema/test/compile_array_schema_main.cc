@@ -27,10 +27,10 @@
  */
 
 #include "../array_schema.h"
-#include "../axis_schema.h"
+#include "../dimension_label_schema.h"
 
 int main() {
   (void)sizeof(tiledb::sm::ArraySchema);
-  (void)sizeof(tiledb::sm::AxisSchema);
+  (void)sizeof(tiledb::sm::DimensionLabelSchema);
   return 0;
 }

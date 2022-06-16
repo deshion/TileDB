@@ -75,7 +75,7 @@ target_sources(compile_domain PRIVATE test/compile_domain_main.cc)
 #
 # `array_schema` object library
 #
-add_library(array_schema OBJECT array_schema.cc axis_schema.cc)
+add_library(array_schema OBJECT array_schema.cc dimension_label_schema.cc)
 target_link_libraries(array_schema PUBLIC attribute $<TARGET_OBJECTS:attribute>)
 target_link_libraries(array_schema PUBLIC domain $<TARGET_OBJECTS:domain>)
 target_link_libraries(array_schema PUBLIC time $<TARGET_OBJECTS:time>)
@@ -101,7 +101,7 @@ if (TILEDB_TESTS)
         test/main.cc
         test/unit_dimension.cc
         test/unit_domain_data.cc
-        test/unit_axis_schema.cc
+        test/unit_dimension_label_schema.cc
     )
 
     add_test(

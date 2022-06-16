@@ -1,5 +1,5 @@
 /**
- * @file tiledb/sm/axis/axis.h
+ * @file tiledb/sm/dimension_label/dimension_label.h
  *
  * @section LICENSE
  *
@@ -27,15 +27,15 @@
  *
  * @section DESCRIPTION
  *
- * Defines the Axis object
+ * Defines the DimensionLabel object
  */
 
-#ifndef TILEDB_AXIS_H
-#define TILEDB_AXIS_H
+#ifndef TILEDB_DIMENSION_LABEL_H
+#define TILEDB_DIMENSION_LABEL_H
 
 #include "tiledb/common/common.h"
 #include "tiledb/sm/array/array.h"
-#include "tiledb/sm/array_schema/axis_schema.h"
+#include "tiledb/sm/array_schema/dimension_label_schema.h"
 #include "tiledb/sm/enums/label_order.h"
 
 using namespace tiledb::common;
@@ -47,17 +47,17 @@ class Dimension;
 class StorageManager;
 class URI;
 
-/** Return a Status_AxisError error class Status with a given
+/** Return a Status_DimensionLabelError error class Status with a given
  * message **/
-inline Status Status_AxisError(const std::string& msg) {
-  return {"[TileDB::Axis] Error", msg};
+inline Status Status_DimensionLabelError(const std::string& msg) {
+  return {"[TileDB::DimensionLabel] Error", msg};
 };
 
 /**
  * A dual-array object to be opened for reads/writes. The two one-dimensional
  * arrays make up the arrays needed for a dimension label.
  **/
-class Axis {
+class DimensionLabel {
  public:
   /**
    * Constructor.
@@ -74,13 +74,13 @@ class Axis {
    * @param index_attr_id The integer ID of the index attribute in the labelled
    * array.
    */
-  Axis(
+  DimensionLabel(
       const URI& indexed_array_uri,
       const URI& labelled_array_uri,
       StorageManager* storage_manager,
       LabelOrder label_order,
-      const AxisSchema::attribute_size_type label_attr_id = 0,
-      const AxisSchema::attribute_size_type index_attr_id = 0);
+      const DimensionLabelSchema::attribute_size_type label_attr_id = 0,
+      const DimensionLabelSchema::attribute_size_type index_attr_id = 0);
 
   /** Closes the array and frees all memory. */
   Status close();
@@ -107,19 +107,19 @@ class Axis {
     return labelled_array_;
   }
 
-  /** Returns the order of the axis. */
+  /** Returns the order of the dimension label. */
   inline LabelOrder label_order() const {
     return label_order_;
   }
 
   /**
-   * Opens the axis for reading at a timestamp retrieved from the config
-   * or for writing.
+   * Opens the dimension label for reading at a timestamp retrieved from the
+   * config or for writing.
    *
-   * @param query_type The mode in which the axis is opened.
-   * @param encryption_type The encryption type of the axis
-   * @param encryption_key If the axis is encrypted, the private encryption
-   *    key. For unencrypted axes, pass `nullptr`.
+   * @param query_type The mode in which the dimension label is opened.
+   * @param encryption_type The encryption type of the dimension label
+   * @param encryption_key If the dimension label is encrypted, the private
+   * encryption key. For unencrypted axes, pass `nullptr`.
    * @param key_length The length in bytes of the encryption key.
    * @return Status
    */
@@ -130,15 +130,17 @@ class Axis {
       uint32_t key_length);
 
   /**
-   * Opens the axis for reading.
+   * Opens the dimension label for reading.
    *
    * @param query_type The query type. This should always be READ. It
    *    is here only for sanity check.
-   * @param timestamp_start The start timestamp at which to open the axis.
-   * @param timestamp_end The end timestamp at which to open the axis.
-   * @param encryption_type The encryption type of the axis
-   * @param encryption_key If the axis is encrypted, the private encryption
-   *    key. For unencrypted axes, pass `nullptr`.
+   * @param timestamp_start The start timestamp at which to open the
+   * dimension label.
+   * @param timestamp_end The end timestamp at which to open the
+   * dimension label.
+   * @param encryption_type The encryption type of the dimension label
+   * @param encryption_key If the dimension label is encrypted, the private
+   * encryption key. For unencrypted axes, pass `nullptr`.
    * @param key_length The length in bytes of the encryption key.
    * @return Status
    *
@@ -153,11 +155,11 @@ class Axis {
       uint32_t key_length);
 
   /**
-   * Opens the axis for reading without fragments.
+   * Opens the dimension label for reading without fragments.
    *
-   * @param encryption_type The encryption type of the axis
-   * @param encryption_key If the axis is encrypted, the private encryption
-   *    key. For unencrypted axes, pass `nullptr`.
+   * @param encryption_type The encryption type of the dimension label
+   * @param encryption_key If the dimension label is encrypted, the private
+   * encryption key. For unencrypted axes, pass `nullptr`.
    * @param key_length The length in bytes of the encryption key.
    * @return Status
    *
@@ -179,23 +181,23 @@ class Axis {
   /** Array with label dimension */
   shared_ptr<Array> labelled_array_;
 
-  /** Label order type of the axis */
+  /** Label order type of the dimension label */
   LabelOrder label_order_;
 
   /** Name of the label attribute in the indexed array. */
-  AxisSchema::attribute_size_type label_attr_id_;
+  DimensionLabelSchema::attribute_size_type label_attr_id_;
 
   /** Name of the index attribute in the labelled array. */
-  AxisSchema::attribute_size_type index_attr_id_;
+  DimensionLabelSchema::attribute_size_type index_attr_id_;
 
-  /** Latest axis schema  */
-  shared_ptr<AxisSchema> schema_;
+  /** Latest dimension label schema  */
+  shared_ptr<DimensionLabelSchema> schema_;
 
   /*******************/
   /* Private methods */
   /*******************/
 
-  /** Loads and checks the axis schema. */
+  /** Loads and checks the dimension label schema. */
   Status load_schema();
 };
 

@@ -35,8 +35,8 @@
 
 #include "tiledb/sm/array_schema/array_schema.h"
 #include "tiledb/sm/array_schema/attribute.h"
-#include "tiledb/sm/array_schema/axis_schema.h"
 #include "tiledb/sm/array_schema/dimension.h"
+#include "tiledb/sm/array_schema/dimension_label_schema.h"
 #include "tiledb/sm/array_schema/domain.h"
 #include "tiledb/sm/enums/array_type.h"
 #include "tiledb/sm/enums/datatype.h"
@@ -95,9 +95,9 @@ inline shared_ptr<ArraySchema> make_array_schema(
   return array_schema;
 }
 
-/**Helper function for making an axis schema. */
+/**Helper function for making an dimension label schema. */
 template <typename TINDEX, typename TLABEL>
-shared_ptr<AxisSchema> make_axis_schema(
+shared_ptr<DimensionLabelSchema> make_dimension_label_schema(
     LabelOrder label_order,
     Dimension* dim,
     TINDEX index_tile_extent,
@@ -120,10 +120,10 @@ shared_ptr<AxisSchema> make_axis_schema(
   label_tile.assign_as<TLABEL>(label_tile_extent);
   ByteVecValue label_fill;
   label_fill.assign_as<TLABEL>(label_fill_value);
-  return make_shared<AxisSchema>(
+  return make_shared<DimensionLabelSchema>(
       HERE(),
       label_order,
-      make_shared<AxisComponent>(
+      make_shared<DimensionLabelComponent>(
           HERE(),
           "index",
           dim->type(),
@@ -133,7 +133,7 @@ shared_ptr<AxisSchema> make_axis_schema(
           index_fill,
           FilterPipeline(),
           FilterPipeline()),
-      make_shared<AxisComponent>(
+      make_shared<DimensionLabelComponent>(
           HERE(),
           "label",
           label_type,

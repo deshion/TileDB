@@ -1,5 +1,5 @@
 /**
- * @file tiledb/sm/axis/axis_schema.h
+ * @file tiledb/sm/array_schema/dimension_label_schema.h
  *
  * @section LICENSE
  *
@@ -27,11 +27,11 @@
  *
  * @section DESCRIPTION
  *
- * Defines the axis schema class
+ * Defines the array schema class
  */
 
-#ifndef TILEDB_AXIS_SCHEMA_H
-#define TILEDB_AXIS_SCHEMA_H
+#ifndef TILEDB_dimension_label_schema_H
+#define TILEDB_dimension_label_schema_H
 
 #include "tiledb/common/common.h"
 #include "tiledb/sm/enums/label_order.h"
@@ -55,28 +55,29 @@ class ByteVecValue;
 class FilterPipeline;
 
 /**
- * Return a Status_AxisSchema error class Status with a given message
+ * Return a Status_DimensionLabelSchema error class Status with a given message
  **/
-inline Status Status_AxisSchemaError(const std::string& msg) {
-  return {"[TileDB::AxisSchema] Error", msg};
+inline Status Status_DimensionLabelSchemaError(const std::string& msg) {
+  return {"[TileDB::DimensionLabelSchema] Error", msg};
 }
 
 /**
- * Return a Status_AxisComponent error class Status with a given message
+ * Return a Status_DimensionLabelComponent error class Status with a given
+ *message
  **/
-inline Status Status_AxisComponentError(const std::string& msg) {
-  return {"[TileDB::AxisComponent] Error", msg};
+inline Status Status_DimensionLabelComponentError(const std::string& msg) {
+  return {"[TileDB::DimensionLabelComponent] Error", msg};
 }
 
 /**
  * A component is a combination dimension and attribute with matching datatypes.
  */
-class AxisComponent {
+class DimensionLabelComponent {
  public:
   /**
    * Default constructor is not C.41 compliant.
    */
-  AxisComponent() = delete;
+  DimensionLabelComponent() = delete;
 
   /**
    * Constructor.
@@ -84,7 +85,7 @@ class AxisComponent {
    * @param name The name of the dimension and attribute.
    * @param type The type of the dimension and attribute.
    */
-  AxisComponent(const std::string& name, Datatype type);
+  DimensionLabelComponent(const std::string& name, Datatype type);
 
   /**
    * Constructor
@@ -99,7 +100,7 @@ class AxisComponent {
    * @param attr_filters Compression filters for the attribute
    * @param dim_filters Compression filters for the dimension
    */
-  AxisComponent(
+  DimensionLabelComponent(
       const std::string name,
       Datatype type,
       uint32_t cell_val_num,
@@ -112,10 +113,11 @@ class AxisComponent {
   /**
    * Constructor.
    *
-   * @param dim Dimension for the axis.
-   * @param attr Attribute for the axis.
+   * @param dim Dimension for the dimension label.
+   * @param attr Attribute for the dimension label.
    */
-  AxisComponent(shared_ptr<Dimension> dim, shared_ptr<Attribute> attr);
+  DimensionLabelComponent(
+      shared_ptr<Dimension> dim, shared_ptr<Attribute> attr);
 
   /** Returns the attribute of the component. */
   inline shared_ptr<Attribute> attribute() const {
@@ -143,35 +145,37 @@ class AxisComponent {
 };
 
 /**
- * Schema for an axis. An axis consists of two one-dimensional arrays used to
- * define a dimension label.
+ * Schema for an dimension label. An dimension label consists of two
+ * one-dimensional arrays used to define a dimension label.
  */
-class AxisSchema {
+class DimensionLabelSchema {
  public:
   /**
-   * Size type for the number of labels in an axis and for label indices.
+   * Size type for the number of labels in an dimension label and for label
+   * indices.
    *
    * This must be the same as ArraySchema::attribute_size_type
    */
   using attribute_size_type = unsigned int;
 
   /** Default constructor is not C.41 compliant. */
-  AxisSchema() = delete;
+  DimensionLabelSchema() = delete;
 
   /**
    * Constructor.
    *
-   * @param label_order Order of the labels relative to the index for the axis.
+   * @param label_order Order of the labels relative to the index for the
+   * dimension label.
    * @param index_component Definition of the index dimension and attribute.
    * @param label_component Definition of the label dimension and attribute.
    * @param capacity Capactiy for the arrays.
    * @param cell_order The cell order for both arrays.
    * @param tile_order The tile order for both arrays.
    */
-  AxisSchema(
+  DimensionLabelSchema(
       LabelOrder label_order,
-      shared_ptr<const AxisComponent> index_component,
-      shared_ptr<const AxisComponent> label_component,
+      shared_ptr<const DimensionLabelComponent> index_component,
+      shared_ptr<const DimensionLabelComponent> label_component,
       uint64_t capacity = constants::capacity,
       Layout cell_order = Layout::ROW_MAJOR,
       Layout tile_order = Layout::ROW_MAJOR);
@@ -179,7 +183,8 @@ class AxisSchema {
   /**
    * Constructor.
    *
-   * @param label_order Order of the labels relative to the index for the axis.
+   * @param label_order Order of the labels relative to the index for the
+   * dimension label.
    * @param indexed_array_schema Array schema for the array with indices defined
    * on the dimension.
    * @param labelled_array_schema Array schema for the array with labels defined
@@ -189,7 +194,7 @@ class AxisSchema {
    * @param index_attr_id The integer ID for the index attribute on the labelled
    * array.
    */
-  AxisSchema(
+  DimensionLabelSchema(
       LabelOrder label_order,
       shared_ptr<ArraySchema> indexed_array_schema,
       shared_ptr<ArraySchema> labelled_array_schema,
@@ -208,11 +213,11 @@ class AxisSchema {
   const Dimension* index_dimension() const;
 
   /**
-   * Checks if this axis is compatible as a dimension label for a given
-   * dimension.
+   * Checks if this dimension label is compatible as a dimension label for a
+   * given dimension.
    *
    * @param dim Dimension to check compatibility against
-   * @returns If the axis is compatible as a dimension label
+   * @returns If the dimension label is compatible as a dimension label
    */
   bool is_compatible_label(const Dimension* dim) const;
 
@@ -227,7 +232,7 @@ class AxisSchema {
     return label_attr_id_;
   }
 
-  /** Returns the label order type of this axis. */
+  /** Returns the label order type of this dimension label. */
   inline LabelOrder label_order() const {
     return label_order_;
   }

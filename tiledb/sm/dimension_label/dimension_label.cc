@@ -1,5 +1,5 @@
 /**
- * @file tiledb/sm/axis/axis.cc
+ * @file tiledb/sm/dimension_label/dimension_label.cc
  *
  * @section LICENSE
  *
@@ -27,12 +27,12 @@
  *
  */
 
-#include "tiledb/sm/axis/axis.h"
+#include "tiledb/sm/dimension_label/dimension_label.h"
 #include "tiledb/common/common.h"
 #include "tiledb/sm/array/array.h"
 #include "tiledb/sm/array_schema/attribute.h"
-#include "tiledb/sm/array_schema/axis_schema.h"
 #include "tiledb/sm/array_schema/dimension.h"
+#include "tiledb/sm/array_schema/dimension_label_schema.h"
 #include "tiledb/sm/enums/label_order.h"
 #include "tiledb/sm/filesystem/uri.h"
 #include "tiledb/type/range/range.h"
@@ -41,13 +41,13 @@ using namespace tiledb::common;
 
 namespace tiledb::sm {
 
-Axis::Axis(
+DimensionLabel::DimensionLabel(
     const URI& indexed_array_uri,
     const URI& labelled_array_uri,
     StorageManager* storage_manager,
     LabelOrder label_order,
-    const AxisSchema::attribute_size_type label_attr_id,
-    const AxisSchema::attribute_size_type index_attr_id)
+    const DimensionLabelSchema::attribute_size_type label_attr_id,
+    const DimensionLabelSchema::attribute_size_type index_attr_id)
     : indexed_array_(
           make_shared<Array>(HERE(), indexed_array_uri, storage_manager))
     , labelled_array_(
@@ -58,39 +58,44 @@ Axis::Axis(
     , schema_{nullptr} {
 }
 
-Status Axis::close() {
+Status DimensionLabel::close() {
   auto status_indexed = indexed_array_->close();
   auto status_labelled = labelled_array_->close();
   if (!status_indexed.ok() || !status_labelled.ok())
-    return Status_AxisError("Unable to close both axis arrays.");
+    return Status_DimensionLabelError(
+        "Unable to close both dimension label arrays.");
   return Status::Ok();
 }
 
-const Attribute* Axis::index_attribute() const {
+const Attribute* DimensionLabel::index_attribute() const {
   if (!schema_)
-    throw std::logic_error("Axis schema does not exist. Axis must be opened.");
+    throw std::logic_error(
+        "DimensionLabel schema does not exist. DimensionLabel must be opened.");
   return schema_->index_attribute();
 }
 
-const Dimension* Axis::index_dimension() const {
+const Dimension* DimensionLabel::index_dimension() const {
   if (!schema_)
-    throw std::logic_error("Axis schema does not exist. Axis must be opened.");
+    throw std::logic_error(
+        "DimensionLabel schema does not exist. DimensionLabel must be opened.");
   return schema_->index_dimension();
 }
 
-const Attribute* Axis::label_attribute() const {
+const Attribute* DimensionLabel::label_attribute() const {
   if (!schema_)
-    throw std::logic_error("Axis schema does not exist. Axis must be opened.");
+    throw std::logic_error(
+        "DimensionLabel schema does not exist. DimensionLabel must be opened.");
   return schema_->label_attribute();
 }
 
-const Dimension* Axis::label_dimension() const {
+const Dimension* DimensionLabel::label_dimension() const {
   if (!schema_)
-    throw std::logic_error("Axis schema does not exist. Axis must be opened.");
+    throw std::logic_error(
+        "DimensionLabel schema does not exist. DimensionLabel must be opened.");
   return schema_->label_dimension();
 }
 
-Status Axis::open(
+Status DimensionLabel::open(
     QueryType query_type,
     EncryptionType encryption_type,
     const void* encryption_key,
@@ -103,7 +108,7 @@ Status Axis::open(
   return Status::Ok();
 }
 
-Status Axis::open(
+Status DimensionLabel::open(
     QueryType query_type,
     uint64_t timestamp_start,
     uint64_t timestamp_end,
@@ -128,7 +133,7 @@ Status Axis::open(
   return Status::Ok();
 }
 
-Status Axis::open_without_fragments(
+Status DimensionLabel::open_without_fragments(
     EncryptionType encryption_type,
     const void* encryption_key,
     uint32_t key_length) {
@@ -140,7 +145,7 @@ Status Axis::open_without_fragments(
   return Status::Ok();
 }
 
-Status Axis::load_schema() {
+Status DimensionLabel::load_schema() {
   auto&& [label_status, label_schema] = labelled_array_->get_array_schema();
   if (!label_status.ok())
     return label_status;
@@ -148,7 +153,7 @@ Status Axis::load_schema() {
   if (!index_status.ok())
     return index_status;
   try {
-    schema_ = make_shared<AxisSchema>(
+    schema_ = make_shared<DimensionLabelSchema>(
         HERE(),
         label_order_,
         index_schema.value(),
@@ -156,7 +161,7 @@ Status Axis::load_schema() {
         label_attr_id_,
         index_attr_id_);
   } catch (std::invalid_argument& except) {
-    return Status_AxisError(except.what());
+    return Status_DimensionLabelError(except.what());
   }
   return Status::Ok();
 }

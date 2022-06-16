@@ -1,5 +1,5 @@
 /**
- * @file tiledb/sm/axis/axis_schema.cc
+ * @file tiledb/sm/array_schema/dimension_label_schema.cc
  *
  * @section LICENSE
  *
@@ -26,7 +26,7 @@
  * THE SOFTWARE.
  */
 
-#include "tiledb/sm/array_schema/axis_schema.h"
+#include "tiledb/sm/array_schema/dimension_label_schema.h"
 #include "tiledb/common/common.h"
 #include "tiledb/sm/array_schema/array_schema.h"
 #include "tiledb/sm/array_schema/attribute.h"
@@ -43,11 +43,12 @@ using namespace tiledb::type;
 namespace tiledb::sm {
 
 /******************************************/
-/*             AxisComponent              */
+/*             DimensionLabelComponent              */
 /******************************************/
 
-AxisComponent::AxisComponent(const std::string& name, Datatype type)
-    : AxisComponent(
+DimensionLabelComponent::DimensionLabelComponent(
+    const std::string& name, Datatype type)
+    : DimensionLabelComponent(
           name,
           type,
           (datatype_is_string(type)) ? constants::var_num : 1,
@@ -58,7 +59,7 @@ AxisComponent::AxisComponent(const std::string& name, Datatype type)
           FilterPipeline()) {
 }
 
-AxisComponent::AxisComponent(
+DimensionLabelComponent::DimensionLabelComponent(
     const std::string name,
     Datatype type,
     uint32_t cell_val_num,
@@ -80,17 +81,17 @@ AxisComponent::AxisComponent(
           0)) {
 }
 
-AxisComponent::AxisComponent(
+DimensionLabelComponent::DimensionLabelComponent(
     shared_ptr<Dimension> dim, shared_ptr<Attribute> attr)
     : dimension_(dim)
     , attribute_(attr) {
   auto&& [is_ok, msg] = is_compatible(dim.get(), attr.get());
   if (!is_ok)
     throw std::invalid_argument(
-        "Cannot construct axis component; " + msg.value());
+        "Cannot construct dimension label component; " + msg.value());
 }
 
-tuple<bool, optional<std::string>> AxisComponent::is_compatible(
+tuple<bool, optional<std::string>> DimensionLabelComponent::is_compatible(
     const Dimension* dim, const Attribute* attr) {
   if (attr->nullable())
     return {false, "Attribute cannot be nullable."};
@@ -102,13 +103,13 @@ tuple<bool, optional<std::string>> AxisComponent::is_compatible(
   return {true, nullopt};
 }
 /******************************************/
-/*              AxisSchema                */
+/*              DimensionLabelSchema                */
 /******************************************/
 
-AxisSchema::AxisSchema(
+DimensionLabelSchema::DimensionLabelSchema(
     LabelOrder label_order,
-    shared_ptr<const AxisComponent> index_component,
-    shared_ptr<const AxisComponent> label_component,
+    shared_ptr<const DimensionLabelComponent> index_component,
+    shared_ptr<const DimensionLabelComponent> label_component,
     uint64_t capacity,
     Layout cell_order,
     Layout tile_order)
@@ -127,7 +128,7 @@ AxisSchema::AxisSchema(
   indexed_array_schema_->set_capacity(capacity);
   auto status = indexed_array_schema_->check();
   if (!status.ok())
-    throw StatusException(Status_AxisSchemaError(
+    throw StatusException(Status_DimensionLabelSchemaError(
         "Index array schema check failed; Index array schema is not valid."));
   // Set-up labelled array
   std::vector<shared_ptr<Dimension>> label_dims{label_component->dimension()};
@@ -138,11 +139,11 @@ AxisSchema::AxisSchema(
   labelled_array_schema_->set_capacity(capacity);
   status = labelled_array_schema_->check();
   if (!status.ok())
-    throw StatusException(Status_AxisSchemaError(
+    throw StatusException(Status_DimensionLabelSchemaError(
         "Label array schema check failed; Label array schema is not valid."));
 }
 
-AxisSchema::AxisSchema(
+DimensionLabelSchema::DimensionLabelSchema(
     LabelOrder label_order,
     shared_ptr<ArraySchema> indexed_array_schema,
     shared_ptr<ArraySchema> labelled_array_schema,
@@ -156,58 +157,60 @@ AxisSchema::AxisSchema(
   // Check arrays are one dimensional
   if (labelled_array_schema->dim_num() != 1)
     throw std::invalid_argument(
-        "Invalid axis schema; Labelled array must be one dimensional");
+        "Invalid dimension label schema; Labelled array must be one "
+        "dimensional");
   if (indexed_array_schema->dim_num() != 1)
     throw std::invalid_argument(
-        "Invalid axis schema; Indexed array must be one dimensional");
+        "Invalid dimension label schema; Indexed array must be one "
+        "dimensional");
   // Check index and label attribute exist
   if (label_attr_id_ >= indexed_array_schema->attribute_num())
     throw std::invalid_argument(
-        "Invalid axis schema; No label attribute " +
+        "Invalid dimension label schema; No label attribute " +
         std::to_string(index_attr_id_));
   if (index_attr_id_ >= labelled_array_schema->attribute_num())
     throw std::invalid_argument(
-        "Invalid axis schema; No index attribute " +
+        "Invalid dimension label schema; No index attribute " +
         std::to_string(label_attr_id_));
   // Check the types are consistent between the two arrays
-  auto [is_ok, msg] = AxisComponent::is_compatible(
+  auto [is_ok, msg] = DimensionLabelComponent::is_compatible(
       labelled_array_schema_->dimension_ptr(0),
       indexed_array_schema_->attribute(label_attr_id_));
   if (!is_ok)
     throw std::invalid_argument(
-        "Invalid axis schema; Incompatible definitions of the label "
+        "Invalid dimension label schema; Incompatible definitions of the label "
         "dimension and label attribute. " +
         msg.value());
-  std::tie(is_ok, msg) = AxisComponent::is_compatible(
+  std::tie(is_ok, msg) = DimensionLabelComponent::is_compatible(
       indexed_array_schema_->dimension_ptr(0),
       labelled_array_schema_->attribute(index_attr_id_));
   if (!is_ok)
     throw std::invalid_argument(
-        "Invalid axis schema; Incompatible definitions of the index "
+        "Invalid dimension label schema; Incompatible definitions of the index "
         "dimension and index attribute. " +
         msg.value());
 }
 
-const Attribute* AxisSchema::index_attribute() const {
+const Attribute* DimensionLabelSchema::index_attribute() const {
   return labelled_array_schema_->attribute(index_attr_id_);
 }
 
-const Dimension* AxisSchema::index_dimension() const {
+const Dimension* DimensionLabelSchema::index_dimension() const {
   return indexed_array_schema_->dimension_ptr(0);
 }
 
-bool AxisSchema::is_compatible_label(const Dimension* dim) const {
+bool DimensionLabelSchema::is_compatible_label(const Dimension* dim) const {
   auto dim0 = index_dimension();
   return dim->type() == dim0->type() &&
          dim->cell_val_num() == dim0->cell_val_num() &&
          dim->domain() == dim0->domain();
 }
 
-const Attribute* AxisSchema::label_attribute() const {
+const Attribute* DimensionLabelSchema::label_attribute() const {
   return indexed_array_schema_->attribute(label_attr_id_);
 }
 
-const Dimension* AxisSchema::label_dimension() const {
+const Dimension* DimensionLabelSchema::label_dimension() const {
   return labelled_array_schema_->dimension_ptr(0);
 }
 

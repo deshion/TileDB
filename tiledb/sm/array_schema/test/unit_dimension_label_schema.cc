@@ -1,5 +1,5 @@
 /**
- * @file tiledb/sm/axis/test/unit_axis_schema.cc
+ * @file tiledb/sm/array_schema/test/unit_dimension_label_schema.cc
  *
  * @section LICENSE
  *
@@ -27,7 +27,7 @@
  *
  * @section DESCRIPTION
  *
- * This file contains unit tests for AxisSchema
+ * This file contains unit tests for the DimensionLabelSchema class
  */
 
 #include <catch.hpp>
@@ -37,7 +37,8 @@
 using namespace tiledb::common;
 using namespace tiledb::sm;
 
-TEST_CASE("Test axis schema construction", "[axis_schema]") {
+TEST_CASE(
+    "Test dimension label schema construction", "[dimension_label_schema]") {
   // Create indexed array schema
   std::vector<shared_ptr<Dimension>> indexed_array_dims{
       test::make_dimension<uint64_t>("dim0", Datatype::UINT64, 1, 0, 10, 11)};
@@ -55,10 +56,10 @@ TEST_CASE("Test axis schema construction", "[axis_schema]") {
   auto labelled_array_schema = test::make_array_schema(
       ArrayType::DENSE, labelled_array_dims, labelled_array_attrs);
   REQUIRE(labelled_array_schema->check().ok());
-  // Create axis schema
-  AxisSchema::attribute_size_type label_attr_id{0};
-  AxisSchema::attribute_size_type index_attr_id{0};
-  REQUIRE_NOTHROW(AxisSchema(
+  // Create dimension label schema
+  DimensionLabelSchema::attribute_size_type label_attr_id{0};
+  DimensionLabelSchema::attribute_size_type index_attr_id{0};
+  REQUIRE_NOTHROW(DimensionLabelSchema(
       LabelOrder::FORWARD,
       indexed_array_schema,
       labelled_array_schema,
@@ -66,7 +67,9 @@ TEST_CASE("Test axis schema construction", "[axis_schema]") {
       index_attr_id));
 }
 
-TEST_CASE("Test invalid axis schema construction", "[axis_schema]") {
+TEST_CASE(
+    "Test invalid dimension label schema construction",
+    "[dimension_label_schema]") {
   SECTION("Mismatched index definition") {
     // Create indexed array schema
     std::vector<shared_ptr<Dimension>> indexed_array_dims{
@@ -86,10 +89,10 @@ TEST_CASE("Test invalid axis schema construction", "[axis_schema]") {
     auto labelled_array_schema = test::make_array_schema(
         ArrayType::DENSE, labelled_array_dims, labelled_array_attrs);
     REQUIRE(labelled_array_schema->check().ok());
-    // Create axis schema
-    AxisSchema::attribute_size_type label_attr_id{0};
-    AxisSchema::attribute_size_type index_attr_id{0};
-    REQUIRE_THROWS(AxisSchema(
+    // Create dimension label schema
+    DimensionLabelSchema::attribute_size_type label_attr_id{0};
+    DimensionLabelSchema::attribute_size_type index_attr_id{0};
+    REQUIRE_THROWS(DimensionLabelSchema(
         LabelOrder::FORWARD,
         indexed_array_schema,
         labelled_array_schema,
@@ -116,10 +119,10 @@ TEST_CASE("Test invalid axis schema construction", "[axis_schema]") {
     auto labelled_array_schema = test::make_array_schema(
         ArrayType::DENSE, labelled_array_dims, labelled_array_attrs);
     REQUIRE(labelled_array_schema->check().ok());
-    // Create axis schema
-    AxisSchema::attribute_size_type label_attr_id{0};
-    AxisSchema::attribute_size_type index_attr_id{0};
-    REQUIRE_THROWS(AxisSchema(
+    // Create dimension label schema
+    DimensionLabelSchema::attribute_size_type label_attr_id{0};
+    DimensionLabelSchema::attribute_size_type index_attr_id{0};
+    REQUIRE_THROWS(DimensionLabelSchema(
         LabelOrder::FORWARD,
         indexed_array_schema,
         labelled_array_schema,
@@ -147,10 +150,10 @@ TEST_CASE("Test invalid axis schema construction", "[axis_schema]") {
     auto labelled_array_schema = test::make_array_schema(
         ArrayType::DENSE, labelled_array_dims, labelled_array_attrs);
     REQUIRE(labelled_array_schema->check().ok());
-    // Create axis schema
-    AxisSchema::attribute_size_type label_attr_id{0};
-    AxisSchema::attribute_size_type index_attr_id{0};
-    REQUIRE_THROWS(AxisSchema(
+    // Create dimension label schema
+    DimensionLabelSchema::attribute_size_type label_attr_id{0};
+    DimensionLabelSchema::attribute_size_type index_attr_id{0};
+    REQUIRE_THROWS(DimensionLabelSchema(
         LabelOrder::FORWARD,
         indexed_array_schema,
         labelled_array_schema,
@@ -179,10 +182,10 @@ TEST_CASE("Test invalid axis schema construction", "[axis_schema]") {
     auto labelled_array_schema = test::make_array_schema(
         ArrayType::DENSE, labelled_array_dims, labelled_array_attrs);
     REQUIRE(labelled_array_schema->check().ok());
-    // Create axis schema
-    AxisSchema::attribute_size_type label_attr_id{0};
-    AxisSchema::attribute_size_type index_attr_id{0};
-    REQUIRE_THROWS(AxisSchema(
+    // Create dimension label schema
+    DimensionLabelSchema::attribute_size_type label_attr_id{0};
+    DimensionLabelSchema::attribute_size_type index_attr_id{0};
+    REQUIRE_THROWS(DimensionLabelSchema(
         LabelOrder::FORWARD,
         indexed_array_schema,
         labelled_array_schema,
@@ -209,10 +212,10 @@ TEST_CASE("Test invalid axis schema construction", "[axis_schema]") {
     auto labelled_array_schema = test::make_array_schema(
         ArrayType::DENSE, labelled_array_dims, labelled_array_attrs);
     REQUIRE(labelled_array_schema->check().ok());
-    // Create axis schema
-    AxisSchema::attribute_size_type label_attr_id{1};
-    AxisSchema::attribute_size_type index_attr_id{0};
-    REQUIRE_THROWS(AxisSchema(
+    // Create dimension label schema
+    DimensionLabelSchema::attribute_size_type label_attr_id{1};
+    DimensionLabelSchema::attribute_size_type index_attr_id{0};
+    REQUIRE_THROWS(DimensionLabelSchema(
         LabelOrder::FORWARD,
         indexed_array_schema,
         labelled_array_schema,
@@ -239,10 +242,10 @@ TEST_CASE("Test invalid axis schema construction", "[axis_schema]") {
     auto labelled_array_schema = test::make_array_schema(
         ArrayType::DENSE, labelled_array_dims, labelled_array_attrs);
     REQUIRE(labelled_array_schema->check().ok());
-    // Create axis schema
-    AxisSchema::attribute_size_type label_attr_id{0};
-    AxisSchema::attribute_size_type index_attr_id{1};
-    REQUIRE_THROWS(AxisSchema(
+    // Create dimension label schema
+    DimensionLabelSchema::attribute_size_type label_attr_id{0};
+    DimensionLabelSchema::attribute_size_type index_attr_id{1};
+    REQUIRE_THROWS(DimensionLabelSchema(
         LabelOrder::FORWARD,
         indexed_array_schema,
         labelled_array_schema,
@@ -251,32 +254,35 @@ TEST_CASE("Test invalid axis schema construction", "[axis_schema]") {
   }
 }
 
-TEST_CASE("Test AxisSchema::is_compatible_label", "[axis_schema]") {
-  // Create axis schema
+TEST_CASE(
+    "Test DimensionLabelSchema::is_compatible_label",
+    "[dimension_label_schema]") {
+  // Create dimension label schema
   auto dim =
       test::make_dimension<uint64_t>("dim", Datatype::UINT64, 1, 0, 15, 8);
-  auto axis_schema = test::make_axis_schema<uint64_t, double>(
-      LabelOrder::FORWARD,
-      dim.get(),
-      16,
-      0,
-      Datatype::FLOAT64,
-      1,
-      -1.0,
-      1.0,
-      2.0,
-      0.0);
+  auto dimension_label_schema =
+      test::make_dimension_label_schema<uint64_t, double>(
+          LabelOrder::FORWARD,
+          dim.get(),
+          16,
+          0,
+          Datatype::FLOAT64,
+          1,
+          -1.0,
+          1.0,
+          2.0,
+          0.0);
   SECTION("Is valid") {
-    REQUIRE(axis_schema->is_compatible_label(dim.get()));
+    REQUIRE(dimension_label_schema->is_compatible_label(dim.get()));
   }
   SECTION("Datatype doesn't match") {
     auto dim =
         test::make_dimension<uint64_t>("dim", Datatype::INT64, 1, 0, 15, 16);
-    REQUIRE(!axis_schema->is_compatible_label(dim.get()));
+    REQUIRE(!dimension_label_schema->is_compatible_label(dim.get()));
   }
   SECTION("Domain doesn't match") {
     auto dim =
         test::make_dimension<uint64_t>("dim", Datatype::UINT64, 1, 16, 31, 16);
-    REQUIRE(!axis_schema->is_compatible_label(dim.get()));
+    REQUIRE(!dimension_label_schema->is_compatible_label(dim.get()));
   }
 }

@@ -128,11 +128,11 @@ set(TILEDB_CORE_SOURCES
   ${TILEDB_CORE_INCLUDE_DIR}/tiledb/sm/array/array_directory.cc
   ${TILEDB_CORE_INCLUDE_DIR}/tiledb/sm/array_schema/array_schema.cc
   ${TILEDB_CORE_INCLUDE_DIR}/tiledb/sm/array_schema/array_schema_evolution.cc
-  ${TILEDB_CORE_INCLUDE_DIR}/tiledb/sm/array_schema/axis_schema.cc
+  ${TILEDB_CORE_INCLUDE_DIR}/tiledb/sm/array_schema/dimension_label_schema.cc
   ${TILEDB_CORE_INCLUDE_DIR}/tiledb/sm/array_schema/attribute.cc
   ${TILEDB_CORE_INCLUDE_DIR}/tiledb/sm/array_schema/dimension.cc
   ${TILEDB_CORE_INCLUDE_DIR}/tiledb/sm/array_schema/domain.cc
-  ${TILEDB_CORE_INCLUDE_DIR}/tiledb/sm/axis/axis.cc
+  ${TILEDB_CORE_INCLUDE_DIR}/tiledb/sm/dimension_label/dimension_label.cc
   ${TILEDB_CORE_INCLUDE_DIR}/tiledb/sm/buffer/buffer.cc
   ${TILEDB_CORE_INCLUDE_DIR}/tiledb/sm/buffer/buffer_list.cc
   ${TILEDB_CORE_INCLUDE_DIR}/tiledb/sm/c_api/api_argument_validator.cc
@@ -1059,7 +1059,7 @@ if (TILEDB_VERSION)
     FILES "${TILEDB_PROJECT_CONFIG_VERSION_FILE}"
     DESTINATION "${CONFIG_INSTALL_DIR}"
   )
-endif() 
+endif()
 
 # Install targets file to <prefix>/lib/cmake/TileDB/TileDBTargets.cmake
 install(
